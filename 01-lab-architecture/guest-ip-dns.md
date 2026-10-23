@@ -255,15 +255,39 @@ Resolve-DnsName -Name _msdcs.soc.home.lab -Type NS -Server 10.10.10.10
 
 **Limits:** An NS response and a supporting Additional-section A record do not confirm the AD DC locator SRV records, workstation authentication, DNS client selection, or AD replication health. This query's Additional section lists the internal address; the earlier direct hostname A-record query independently returned **both** `10.10.10.10` and NAT `192.168.111.130`. **Do not infer that the NAT A-record problem has disappeared.**
 
-**Next read-only check — AD domain controller locator SRV record:**
+### Active Directory DC locator SRV lookup — screenshot verified 24 October 2026
+
+A PowerShell screenshot in the named `SOC_DC-1` VMware VM shows a successful read-only query:
 
 ```powershell
 Resolve-DnsName -Name _ldap._tcp.dc._msdcs.soc.home.lab -Type SRV -Server 10.10.10.10
 ```
 
-Confirm that the DNS server returns the expected domain-controller service target. This tests another crucial part of AD DNS without modifying settings. After validating the SRV record, prepare a safe backup/rollback and review registration on the NAT interface before deleting any existing A records.
+| Field | Observed value | DNS section |
+| --- | --- | --- |
+| Service name | `_ldap._tcp.dc._msdcs.soc.home.lab` | Answer |
+| Type | SRV | Answer |
+| Target | `soc_dc01.soc.home.lab` | Answer |
+| Port | `389` (LDAP) | Answer |
+| Priority | `0` | Answer |
+| Weight | `100` | Answer |
+| SRV TTL | `600` seconds | Answer |
+| Additional host A | `10.10.10.10` | Additional |
+| Additional A TTL | `3600` seconds | Additional |
 
-**Outstanding:** Test the `_msdcs.soc.home.lab` NS records directly, verify Windows 10 client live network and AD DNS, examine potentially stale `192.168.254.10`, and establish a backup/change/rollback plan before modifying registrations or listeners.
+**Finding:** The internal DNS server returns the expected LDAP domain-controller locator SRV record and includes the DC's VMnet1 IPv4 address in an Additional A record. This verifies **DNS service discovery data**, not actual LDAP TCP connectivity, authentication, Group Policy application, other locator records or healthy AD replication.
+
+The earlier direct A lookup of `soc_dc01.soc.home.lab` returned **both** `10.10.10.10` and NAT `192.168.111.130`. The SRV query's Additional A value does **not** demonstrate the NAT record is gone. NAT DNS-client registration, all-interface DNS listening and possible stale records remain open findings.
+
+**Next read-only diagnostic — DC DNS health:**
+
+```powershell
+dcdiag /test:dns /s:SOC_DC01
+```
+
+This runs Windows Domain Controller Diagnostics' DNS test against `SOC_DC01`; collect any failures or warnings without changing services or zones. Before remediation, verify a suitable Active Directory-aware backup and rollback procedure; do not treat a VM snapshot alone as a substitute for a proper system-state backup.
+
+**Outstanding:** Assess Domain Controller DNS diagnostic health; verify Windows 10 client IP and AD DNS; evaluate whether `192.168.254.10` is stale; prepare an Active Directory-aware backup and rollback plan before changing DNS registration/listeners or deleting records.
 
 **Other pending checks:** Determine whether `192.168.254.10` is stale, verify current Windows 10 guest address and whether it uses internal AD DNS, review DNS Server interface binding and NAT adapter registration, and create a rollback checkpoint before changing production-like AD lab settings.
 
@@ -286,7 +310,8 @@ The submitted screenshot contained MAC addresses, IPv6 link-local addresses and 
 - [x] `SOC_DC-1`: `soc.home.lab` Name Servers tab lists `soc_dc01.soc.home.lab.` with `10.10.10.10` only (24 October screenshot)
 - [x] `SOC_DC-1`: Inspect `_msdcs.soc.home.lab` Name Servers tab — server `soc_dc01.soc.home.lab.` listed, GUI IP shown as `Unknown` (24 October screenshot)
 - [x] `SOC_DC-1`: `_msdcs.soc.home.lab` NS query returned `soc_dc01.soc.home.lab` with Additional A `10.10.10.10` (24 October screenshot)
-- [ ] `SOC_DC-1`: Check AD locator SRV records; investigate AD initial-synchronisation warning if current; prepare rollback-safe registration/listener/A-record remediation
+- [x] `SOC_DC-1`: Verify LDAP domain-controller locator SRV record (target `soc_dc01.soc.home.lab`, port 389, Additional A `10.10.10.10`; 24 October screenshot)
+- [ ] `SOC_DC-1`: Run read-only `dcdiag /test:dns /s:SOC_DC01`; investigate initial-synchronisation warning if current; prepare Active Directory-aware backup and rollback-safe registration/listener/A-record remediation
 - [ ] `W.10.Pro_Soc-Lab Client`: Verify guest IP, gateway and DNS
 - [ ] `Ubuntu Wazuh`: Verify guest IP, gateway and DNS
 - [ ] `Splunk-SIEM`: Verify guest IP, gateway and DNS
