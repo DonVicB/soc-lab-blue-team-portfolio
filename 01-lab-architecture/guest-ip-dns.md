@@ -154,13 +154,34 @@ The operator supplied a subsequent PowerShell screenshot showing the corrected `
 
 **Limits:** These results show zone configuration, **not** AD replication health, availability of required SRV records, or successful DNS lookups. The earlier `isdsintergrated` typo and its blank values remain documented above as part of the diagnostic trail. No DNS configuration changes have been made.
 
-**Next read-only test — query the internal DNS server directly for its A records:**
+### Direct DNS A-record resolution — screenshot verified 23 October 2026
+
+On `SOC_DC-1`, the lab owner ran the read-only command:
 
 ```powershell
 Resolve-DnsName -Name soc_dc01.soc.home.lab -Type A -Server 10.10.10.10
 ```
 
-This asks `10.10.10.10` to resolve the domain controller hostname, independently of the Windows DNS client adapter's configured resolver choice. Compare the returned records with the previously observed `10.10.10.10` and `192.168.111.130` before deciding whether any record-registration changes are required.
+The internal DNS server `10.10.10.10` returned **two A records for `SOC_DC01.soc.home.lab`**:
+
+| Returned address | TTL (seconds) | Interpretation |
+| --- | ---: | --- |
+| `192.168.111.130` | 1200 | Domain Controller's VMware NAT address (VMnet8), undesired in ordinary internal client discovery |
+| `10.10.10.10` | 1200 | Intended internal Domain Controller address (VMnet1) |
+
+**Finding:** Direct DNS resolution works, but the authoritative server returns both the internal and NAT addresses for the DC's hostname. Some domain clients may attempt the NAT address when resolving the DC, potentially causing intermittent connection or authentication problems depending on their routes and filtering. These results **do not demonstrate that either connection attempt succeeded or failed**, only that both addresses are advertised.
+
+**TTL:** 1200 seconds = 20 minutes. Changing the records later would not immediately clear any previously cached responses. No records have been deleted or changed.
+
+**Next read-only check — per-interface DNS registration:**
+
+```powershell
+Get-DnsClient | Select-Object InterfaceAlias, RegisterThisConnectionsAddress, UseSuffixWhenRegistering
+```
+
+Confirm whether the `Ethernet1` (VMnet8 NAT) adapter has `RegisterThisConnectionsAddress` enabled, and compare with `Soc nw` (VMnet1). This setting may explain dynamic registration, although the existing NAT A record could persist from an earlier configuration even if registration is now disabled. Check current settings before any DNS edits.
+
+**Other pending checks:** Determine whether `192.168.254.10` is stale, verify current Windows 10 guest address and whether it uses internal AD DNS, review DNS Server interface binding and NAT adapter registration, and create a rollback checkpoint before changing production-like AD lab settings.
 
 ### Data handling
 
@@ -175,7 +196,8 @@ The submitted screenshot contained MAC addresses, IPv6 link-local addresses and 
 - [x] `SOC_DC-1`: Confirm expected DNS zone names visible in DNS Manager (23 October 2026)
 - [x] `SOC_DC-1`: Enumerate six zones as `Primary` (23 October PowerShell screenshot; AD integration column left blank by misspelled property)
 - [x] `SOC_DC-1`: Verify both AD zones as Primary / `IsDsIntegrated=True` (23 October PowerShell screenshot)
-- [ ] `SOC_DC-1`: Test DNS resolution directly against `10.10.10.10`; review possible stale/NAT A records and adapter DNS registration
+- [x] `SOC_DC-1`: Resolve `SOC_DC01.soc.home.lab` against `10.10.10.10` — internal `10.10.10.10` and NAT `192.168.111.130` returned, TTL 1200 (23 October screenshot)
+- [ ] `SOC_DC-1`: Verify per-adapter DNS registration; assess stale/NAT A records and plan safe remediation
 - [ ] `W.10.Pro_Soc-Lab Client`: Verify guest IP, gateway and DNS
 - [ ] `Ubuntu Wazuh`: Verify guest IP, gateway and DNS
 - [ ] `Splunk-SIEM`: Verify guest IP, gateway and DNS
