@@ -40,6 +40,10 @@ The inventory and configurations will be checked against the current virtual mac
 - **Planned evidence:** Defender detection details, corresponding Splunk events, timeline, ATT&CK mapping and analyst conclusions.
 - **Status:** Investigation documentation pending; no outcome is claimed here.
 
+## Lab architecture documentation
+
+- [VMware SOC lab architecture — preliminary inventory and verification plan](01-lab-architecture/README.md). These network values were recorded previously and still require live validation.
+
 ## Planned repository structure
 
 ```text
