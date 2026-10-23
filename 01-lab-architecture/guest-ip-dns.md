@@ -97,13 +97,36 @@ and reported the following output:
 
 This confirms that the AD domain's DNS name matches the previously observed primary DNS suffix. It corrects the historical `lab.local` note. No Active Directory or DNS configuration was changed.
 
-**Next read-only step — enumerate Windows DNS Server zones:**
+### DNS Manager forward lookup zone evidence — 23 October 2026
+
+A screenshot of the Windows **DNS Manager** console with `soc.home.lab` selected confirms the following **visible forward lookup zones** under the server tree:
+
+- `soc.home.lab`
+- `_msdcs.soc.home.lab`
+
+The selected `soc.home.lab` zone contains `_msdcs`, `_sites`, `_tcp`, `_udp`, `DomainDnsZones` and `ForestDnsZones` folder entries. The zone's Start of Authority (SOA) and Name Server (NS) records are visible; its NS entry names `soc_dc01.soc.home.lab.`. **Presence of these entries does not by itself prove that AD-integrated zone replication, SRV registrations or name resolution are healthy.**
+
+#### Screenshot-visible A (IPv4 address) records
+
+| Record name in `soc.home.lab` | Address shown | Assessment |
+| --- | --- | --- |
+| Zone apex — "(same as parent folder)" | `192.168.111.130` | DC NAT IPv4 address; registration may be undesirable for internal AD clients |
+| Zone apex — "(same as parent folder)" | `192.168.254.10` | Outside both verified VMware subnets; **possible stale record**, not yet validated |
+| `DonW10` | `10.10.10.50` | Differs from historical notes (`10.10.10.15`); check client live configuration |
+| `soc_dc01` | `192.168.111.130` | DC NAT IPv4 address |
+| `soc_dc01` | `10.10.10.10` | Expected VMnet1 IPv4 address from current `ipconfig /all` |
+
+**Security / reliability finding:** Both the domain apex and DC hostname have NAT-related A records. This can cause domain clients to attempt a less appropriate network address. Do **not** delete records yet: first verify their current consumers, DNS registration settings, and how clients resolve the DC. The `192.168.254.10` record may be obsolete but needs confirmation.
+
+**Evidence limits:** This screenshot shows records in the DNS Manager interface, not the `ZoneType` or `IsDsIntegrated` values. It also does not show successful or failed DNS queries. No changes were made to DNS.
+
+**Next read-only command — zone integration details:**
 
 ```powershell
 Get-DnsServerZone | Select-Object ZoneName, ZoneType, IsDsIntegrated
 ```
 
-Inspect the zones actually returned; in particular, look for `soc.home.lab` and any domain-controller locator zones such as `_msdcs.soc.home.lab`. Do **not** infer that a zone exists simply because the AD domain exists. After zone inspection, test lookups against the internal DNS service and review DNS client settings before modifying them.
+Confirm the zone types and AD integration before testing queries directly against the internal DC DNS server (`10.10.10.10`).
 
 ### Data handling
 
@@ -115,7 +138,8 @@ The submitted screenshot contained MAC addresses, IPv6 link-local addresses and 
 - [x] `SOC_DC-1`: Confirm DNS client settings with `Get-DnsClientServerAddress` (23 October 2026)
 - [x] `SOC_DC-1`: DNS Server service reported `Running` (operator confirmation, 23 October 2026)
 - [x] `SOC_DC-1`: Confirm AD domain as `soc.home.lab` and NetBIOS domain as `SOC` (`Get-ADDomain`; operator report, 23 October 2026)
-- [ ] `SOC_DC-1`: Inspect DNS Server zones, test resolution and review DNS registration on the NAT adapter
+- [x] `SOC_DC-1`: Confirm expected DNS zone names visible in DNS Manager (23 October 2026)
+- [ ] `SOC_DC-1`: Verify zone integration/type, test DNS resolution, review possible stale/NAT A records and adapter DNS registration
 - [ ] `W.10.Pro_Soc-Lab Client`: Verify guest IP, gateway and DNS
 - [ ] `Ubuntu Wazuh`: Verify guest IP, gateway and DNS
 - [ ] `Splunk-SIEM`: Verify guest IP, gateway and DNS
