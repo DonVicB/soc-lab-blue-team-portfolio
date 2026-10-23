@@ -223,9 +223,27 @@ The operator opened **DNS Manager → Forward Lookup Zones → soc.home.lab → 
 
 **Scope caution:** The Name Servers tab shows one zone's configuration; it does not establish what every NS/glue resolver might return, verify a separate `_msdcs.soc.home.lab` zone, or negate the undesirable NAT A records shown in DNS Manager.
 
-**Next:** Check **Forward Lookup Zones → _msdcs.soc.home.lab → Properties → Name Servers** to ensure the separate forest locator zone also lists the appropriate internal server IP. Record the result without changing settings. Then finish a rollback/health-check plan before any DNS client registration or listener edits.
+### _msdcs Name Servers tab — screenshot verified 24 October 2026
 
-**Outstanding:** Check `_msdcs.soc.home.lab` Name Servers; verify the client's live network and use of AD DNS; examine potentially stale `192.168.254.10` record; establish a suitable backup and change/rollback plan before editing registration controls.
+In DNS Manager, the operator selected **Forward Lookup Zones → _msdcs.soc.home.lab → Properties → Name Servers**.
+
+| Zone | Name server listed | IP address displayed in DNS Manager |
+| --- | --- | --- |
+| `_msdcs.soc.home.lab` | `soc_dc01.soc.home.lab.` | **Unknown** |
+
+**Finding:** The separate forest locator zone has the expected server **name**, but the Name Servers tab displays **Unknown** for the address. The screenshot does **not** establish whether the underlying NS resource record is missing, invalid, or correct; nor does it establish whether DNS resolution currently fails. The same host's A record previously resolved to both `10.10.10.10` and `192.168.111.130` when queried directly against the internal DNS server. The GUI value may reflect an address-lookup/validation limitation and must not be equated with a broken DNS zone.
+
+**No changes made.** Do not edit the NS row or change other records based on the GUI display alone.
+
+**Next read-only test — query the authoritative server directly for the zone's NS records:**
+
+```powershell
+Resolve-DnsName -Name _msdcs.soc.home.lab -Type NS -Server 10.10.10.10
+```
+
+Compare the returned name-server names with `soc_dc01.soc.home.lab` and investigate any query failures before deciding on remediation. DNS client NAT address registration, DNS Server listeners, and potentially stale A records are separate outstanding issues.
+
+**Outstanding:** Test the `_msdcs.soc.home.lab` NS records directly, verify Windows 10 client live network and AD DNS, examine potentially stale `192.168.254.10`, and establish a backup/change/rollback plan before modifying registrations or listeners.
 
 **Other pending checks:** Determine whether `192.168.254.10` is stale, verify current Windows 10 guest address and whether it uses internal AD DNS, review DNS Server interface binding and NAT adapter registration, and create a rollback checkpoint before changing production-like AD lab settings.
 
@@ -246,7 +264,8 @@ The submitted screenshot contained MAC addresses, IPv6 link-local addresses and 
 - [x] `SOC_DC-1`: Verify adapter DNS registration — VMnet1 and NAT interfaces both `RegisterThisConnectionsAddress=True` (23 October screenshot)
 - [x] `SOC_DC-1`: DNS Server Interfaces tab shows `All IP addresses`, including NAT `192.168.111.130` (24 October screenshot)
 - [x] `SOC_DC-1`: `soc.home.lab` Name Servers tab lists `soc_dc01.soc.home.lab.` with `10.10.10.10` only (24 October screenshot)
-- [ ] `SOC_DC-1`: Check `_msdcs.soc.home.lab` Name Servers, investigate the AD synchronisation warning if current, and prepare rollback-safe DNS registration/listener/A-record remediation
+- [x] `SOC_DC-1`: Inspect `_msdcs.soc.home.lab` Name Servers tab — server `soc_dc01.soc.home.lab.` listed, GUI IP shown as `Unknown` (24 October screenshot)
+- [ ] `SOC_DC-1`: Query `_msdcs.soc.home.lab` NS records directly; investigate AD initial-synchronisation warning if current; prepare rollback-safe registration/listener/A-record remediation
 - [ ] `W.10.Pro_Soc-Lab Client`: Verify guest IP, gateway and DNS
 - [ ] `Ubuntu Wazuh`: Verify guest IP, gateway and DNS
 - [ ] `Splunk-SIEM`: Verify guest IP, gateway and DNS
