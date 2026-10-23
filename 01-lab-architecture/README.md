@@ -1,6 +1,6 @@
 # VMware SOC lab architecture
 
-> **Status: VM inventory and VMnet1/VMnet8 settings verified from screenshots on 23 October 2026; six VM adapter profiles matched by the lab owner's A–F confirmation.** Two VMs still need adapter details; all guest IPs remain unverified.  
+> **Status: Eight of eight VMware VM network adapter configurations documented as of 23 October 2026.** Six profiles A–F mapped by the lab owner and two directly identified in VMware Library screenshots. **Guest IPs, gateway and DNS still require verification.**  
 > **Evidence:** VMware Workstation Library and Virtual Network Editor screenshots supplied on **23 October 2026**. VM IPs and some connection assumptions below were recorded during the **16–18 October 2026** walkthrough. These older observations are not current guest configuration evidence.
 
 ## Purpose and scope
@@ -26,13 +26,13 @@ The following VMware virtual network settings are **confirmed from the Virtual N
 
 ## VMware Workstation Library — screenshot verified 23 October 2026
 
-The screenshot confirms **eight VM display names** in the current VMware Workstation Library. Names are transcribed as shown. Six adapter profiles were later associated with these display names by the lab owner (A–F mapping); their settings came from Hardware screenshots that did not themselves identify the VM. These are **display names**, not necessarily each guest operating system's hostname.
+The screenshot confirms **eight VM display names** in the current VMware Workstation Library. Names are transcribed as shown. Six adapter profiles were later associated with these display names by the lab owner (A–F mapping); their settings came from Hardware screenshots that did not themselves identify the VM. Linux Mint and Metasploitable3 adapter summaries were subsequently confirmed by separate named Library screenshots. These are **display names**, not necessarily each guest operating system's hostname.
 
 | VM display name — verified screenshot | Intended role / earlier lab history | Last recorded VMnet1 IP (unverified today) | Network adapter details | Evidence |
 | --- | --- | --- | --- | --- |
 | `Kali Linux` | Authorised attack simulation | Not yet recorded | Adapter 1: Host-only; Adapter 2: NAT (automatic settings) | Owner mapping: Pair E |
-| `Linux Mint` | Wireshark / network monitoring | Not yet recorded | **Not yet supplied** | Name visible in Library; adapters pending |
-| `Metasploitable3` | Deliberately vulnerable training target | Not yet recorded | **Not yet supplied** | Name visible in Library; adapters pending |
+| `Linux Mint` | Wireshark / network monitoring | Not yet recorded | Adapter 1: Host-only mode; Adapter 2: NAT mode | **Named Library screenshot**; 8 GB RAM, 4 processors, 127 GB SCSI; powered off |
+| `Metasploitable3` | Deliberately vulnerable training target | Not yet recorded | Adapter 1: Custom VMnet1; Adapter 2: Custom VMnet8 | **Named Library screenshot**; 6.1 GB RAM, 4 processors, 39.1 GB SCSI; powered off |
 | `SOC_DC-1` | Previously configured Windows Server 2019 / Active Directory Domain Services (AD DS) / DNS | `10.10.10.10` | Adapter 1: Custom VMnet1; Adapter 2: Custom VMnet8 | Owner mapping: Pair F; IP from prior notes |
 | `Ubuntu Wazuh` | Wazuh manager / dashboard | `10.10.10.20` | Adapter 1: Custom VMnet1; Adapter 2: NAT (automatic) | Owner mapping: Pair D; IP from prior notes |
 | `W.10.Pro_Soc-Lab Client` | Windows 10 domain client; guest hostname previously recorded as `DonW10` | `10.10.10.15` | Adapter 1: Custom VMnet8; Adapter 2: Custom VMnet1 | Owner mapping: Pair C; hostname/IP from prior notes |
@@ -54,9 +54,9 @@ The screenshot confirms **eight VM display names** in the current VMware Worksta
 
 **Previously configured AD domain:** `lab.local` (guest domain membership, DNS settings and current hostnames still require revalidation).
 
-## Architecture diagram — *VM adapters partially verified as of 23 October 2026*
+## Architecture diagram — *all VM adapter assignments documented, 23 October 2026*
 
-The VMnet subnets and types were verified in the Virtual Network Editor. **Solid connections** below represent the A–F hardware screenshots, with VM identities supplied by the lab owner; CALDERA's identity and adapters were additionally established in the VMware Library view. **Dashed edges** denote unverified VM connections. **IP labels marked old** are not yet confirmed from running guests. VMware's generic NAT and Host-only modes for Kali and Wazuh are labelled separately rather than silently treating them as a specific Custom VMnet assignment.
+The VMnet subnets and types were verified in the Virtual Network Editor. **Connections** below represent Hardware settings from screenshots and/or directly named Library summaries. The owner provided identity mappings for A–F; CALDERA, Linux Mint and Metasploitable3 have named Library evidence. **IP labels marked old** have not yet been confirmed in the running guests. Generic NAT and Host-only modes for Kali, Wazuh and Linux Mint are shown conceptually on VMware's configured network types; they were **not** explicitly selected as Custom VMnets.
 
 ```mermaid
 flowchart TB
@@ -70,8 +70,8 @@ flowchart TB
     splunk["Splunk-SIEM<br/>10.10.10.69 (old)"]
     caldera["Caldera-SOC<br/>10.10.10.99 (old)"]
     kali["Kali Linux<br/>guest IP pending"]
-    mint["Linux Mint<br/>adapters pending"]
-    target["Metasploitable3<br/>adapters pending"]
+    mint["Linux Mint<br/>guest IP pending"]
+    target["Metasploitable3<br/>guest IP pending"]
 
     host --- vmnet1
     host --- vmnet8
@@ -87,11 +87,13 @@ flowchart TB
     vmnet1 ---|"Adapter 2"| caldera
     vmnet1 ---|"Adapter 1: Host-only mode"| kali
     vmnet8 ---|"Adapter 2: NAT mode"| kali
-    host -. "unverified adapter connection" .- mint
-    host -. "unverified adapter connection" .- target
+    vmnet1 ---|"Adapter 1: Host-only mode"| mint
+    vmnet8 ---|"Adapter 2: NAT mode"| mint
+    vmnet1 ---|"Adapter 1: Custom VMnet1"| target
+    vmnet8 ---|"Adapter 2: Custom VMnet8 ⚠"| target
 ```
 
-**Note on diagram notation:** The connections between Kali's/Wazuh's generic modes and VMnet1/VMnet8 are shown as conceptual default network associations, not evidence of an explicit `Custom` VMnet setting. Validate these during guest interface and routing checks. No live traffic path or firewall permission has been confirmed.
+**Note on diagram notation:** The generic mode links for Kali, Wazuh and Linux Mint represent VMware's Host-only/NAT selections, not explicit Custom VMnet assignments. No live traffic path or firewall permission has been confirmed. **Risk to address:** Metasploitable3 is configured with VMnet8 NAT as well as VMnet1; consider disconnecting/removing its NAT adapter for isolated testing before powering it on.
 
 ## Network adapter evidence — mapped profiles from 23 October 2026
 
@@ -110,7 +112,9 @@ All six pairs display **8 GB RAM**, **4 processors**, and `Connect at power on` 
 
 The **screenshots verify the hardware values** but did not display VM names; the **lab owner supplied the identities**. See the [detailed adapter evidence and provenance](adapter-evidence.md).
 
-**Outstanding:** `Linux Mint` and `Metasploitable3` still need adapter evidence. The Domain Controller and several other machines appear dual-homed; check guest routing, DNS registration and exposure before treating the lab as securely segmented.
+**Additional directly named screenshots:** `Linux Mint`: 8 GB RAM, 4 processors, 127 GB SCSI, Host-only + NAT. `Metasploitable3`: 6.1 GB RAM, 4 processors, 39.1 GB SCSI, Custom VMnet1 + Custom VMnet8. Both powered off at capture. **All 8 VM adapter configurations are documented.**
+
+**Security observation:** Metasploitable3 is intentionally vulnerable and configured with NAT access through VMnet8. This is a configuration concern, not evidence of actual reachability. For routine isolated attack tests, review disconnecting the NAT adapter before booting. The Domain Controller and other dual-homed systems also require guest routing, DNS registration and firewall checks before the lab can be declared securely segmented.
 
 ## High-level security data flows — to validate
 
@@ -126,7 +130,7 @@ The **screenshots verify the hardware values** but did not display VM names; the
 
 - [x] Verify all **eight VMware Workstation Library** display names from the screenshot dated 23 October 2026. Raw screenshot was **not** committed because it exposes local host path information.
 - [x] Verify **Edit → Virtual Network Editor** screenshots: VMnet1 and VMnet8 connection types, subnet addresses, `/24` masks, connected host adapters and DHCP settings (23 October 2026). NAT gateway address will be checked during guest IP validation.
-- [ ] Match all named VMs to network adapters: six operator-confirmed A–F mappings documented, including CALDERA with separate screenshot identification; **Linux Mint and Metasploitable3 remain to be checked**.
+- [x] Document all eight named VMs' network adapter assignments: six owner-mapped screenshot pairs, plus separate named VMware Library evidence for Caldera-SOC, Linux Mint and Metasploitable3.
 - [ ] On each VM, record hostname, interface name, IPv4 address/prefix, default gateway and DNS server.
 - [ ] Record which adapters are static versus DHCP-assigned.
 - [ ] Confirm that the domain client resolves the AD DNS server and that services can reach their expected log destinations.
@@ -139,7 +143,7 @@ The **screenshots verify the hardware values** but did not display VM names; the
 
 **Step 4.2 — VMware virtual networks: COMPLETE.** Both Virtual Network Editor screenshots confirm VMnet1 Host-only (`10.10.10.0/24`, DHCP disabled) and VMnet8 NAT (`192.168.111.0/24`, DHCP enabled), with connected host adapters. NAT gateway address remains unverified and will be checked during Step 4.4.
 
-**Step 4.3 — VM-to-network wiring: IN PROGRESS (6 of 8 VM mappings).** The lab owner mapped A–F to six VMs; adapter values come from the 12 screenshots, while the identity mapping is operator-reported. `Caldera-SOC` also has directly identified Library-view evidence. Next inspect `Linux Mint` and `Metasploitable3`.
+**Step 4.3 — VM-to-network wiring: COMPLETE (8 of 8 VMs documented).** Six screenshot pairs mapped to names by the owner (A–F); `Caldera-SOC`, `Linux Mint` and `Metasploitable3` also have directly identified Library summaries. Configuration review is **not** equivalent to proving guest network isolation. **Security follow-up:** restrict Metasploitable3's NAT exposure before future vulnerable-target sessions.
 
 **Step 4.4 — Guest IP and DNS:** Validate addresses and network routes inside the running VMs; preserve only redacted evidence.
 
@@ -159,3 +163,4 @@ This repository is currently private, but private repositories can still be acci
 | 2026-10-23 | Confirmed VMnet8 subnet mask 255.255.255.0 (/24), connected VMware host adapter and enabled DHCP | Second Virtual Network Editor screenshot; NAT gateway remains unverified |
 | 2026-10-23 | Transcribed 12 Virtual Machine Settings screenshots into six pairs of adapters and hardware configurations | Named VM attribution pending because the dialogs do not display VM names |
 | 2026-10-23 | Mapped adapter profiles A–F from lab owner to Caldera, Splunk, Windows 10, Wazuh, Kali and domain controller | Operator-confirmed identity; hardware screenshot-backed; Linux Mint and Metasploitable3 pending |
+| 2026-10-23 | Directly verified Linux Mint (Host-only + NAT, 8 GB/127 GB) and Metasploitable3 (VMnet1 + VMnet8, 6.1 GB/39.1 GB) from selected Library views | All eight adapter assignments documented; vulnerable-target NAT configuration flagged; IPs and live reachability pending |
