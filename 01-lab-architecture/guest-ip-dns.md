@@ -211,9 +211,21 @@ A DNS/Active Directory initial-synchronisation warning is visible in Server Mana
 
 **No changes were applied** during this observation. An interface-listening change and NAT address-registration cleanup should be planned together only after validation and a usable rollback point.
 
-**Next read-only review:** In DNS Manager, expand **Forward Lookup Zones**, right-click `soc.home.lab` → **Properties → Name Servers**. Capture the listed name-server names and IP addresses to establish whether the NAT address also appears as an NS/glue address. Do not click Apply or delete entries yet.
+### Zone Name Servers tab — screenshot verified 24 October 2026
 
-**Outstanding:** Check the `soc.home.lab` zone's Name Servers tab; verify the client's live network and use of AD DNS; examine potentially stale `192.168.254.10` record; plan backup and change/rollback validation before editing the registration controls.
+The operator opened **DNS Manager → Forward Lookup Zones → soc.home.lab → Properties → Name Servers**. One entry is listed:
+
+| Name server FQDN | Listed IPv4 address | Evidence |
+| --- | --- | --- |
+| `soc_dc01.soc.home.lab.` | `10.10.10.10` | Zone Properties screenshot |
+
+**Assessment:** The `soc.home.lab` Name Servers list contains the DC's internal VMnet1 IPv4 address only; the NAT address `192.168.111.130` does **not** appear in this list. There is **no evidence here that the Name Servers list itself needs changing**. This result is distinct from the direct `Resolve-DnsName` A-record query, which returned both internal and NAT addresses for the same hostname.
+
+**Scope caution:** The Name Servers tab shows one zone's configuration; it does not establish what every NS/glue resolver might return, verify a separate `_msdcs.soc.home.lab` zone, or negate the undesirable NAT A records shown in DNS Manager.
+
+**Next:** Check **Forward Lookup Zones → _msdcs.soc.home.lab → Properties → Name Servers** to ensure the separate forest locator zone also lists the appropriate internal server IP. Record the result without changing settings. Then finish a rollback/health-check plan before any DNS client registration or listener edits.
+
+**Outstanding:** Check `_msdcs.soc.home.lab` Name Servers; verify the client's live network and use of AD DNS; examine potentially stale `192.168.254.10` record; establish a suitable backup and change/rollback plan before editing registration controls.
 
 **Other pending checks:** Determine whether `192.168.254.10` is stale, verify current Windows 10 guest address and whether it uses internal AD DNS, review DNS Server interface binding and NAT adapter registration, and create a rollback checkpoint before changing production-like AD lab settings.
 
@@ -233,7 +245,8 @@ The submitted screenshot contained MAC addresses, IPv6 link-local addresses and 
 - [x] `SOC_DC-1`: Resolve `SOC_DC01.soc.home.lab` against `10.10.10.10` — internal `10.10.10.10` and NAT `192.168.111.130` returned, TTL 1200 (23 October screenshot)
 - [x] `SOC_DC-1`: Verify adapter DNS registration — VMnet1 and NAT interfaces both `RegisterThisConnectionsAddress=True` (23 October screenshot)
 - [x] `SOC_DC-1`: DNS Server Interfaces tab shows `All IP addresses`, including NAT `192.168.111.130` (24 October screenshot)
-- [ ] `SOC_DC-1`: Review `soc.home.lab` Name Servers tab and current AD initial-synchronisation warning, then plan rollback-safe DNS registration, listener and stale A-record remediation
+- [x] `SOC_DC-1`: `soc.home.lab` Name Servers tab lists `soc_dc01.soc.home.lab.` with `10.10.10.10` only (24 October screenshot)
+- [ ] `SOC_DC-1`: Check `_msdcs.soc.home.lab` Name Servers, investigate the AD synchronisation warning if current, and prepare rollback-safe DNS registration/listener/A-record remediation
 - [ ] `W.10.Pro_Soc-Lab Client`: Verify guest IP, gateway and DNS
 - [ ] `Ubuntu Wazuh`: Verify guest IP, gateway and DNS
 - [ ] `Splunk-SIEM`: Verify guest IP, gateway and DNS
