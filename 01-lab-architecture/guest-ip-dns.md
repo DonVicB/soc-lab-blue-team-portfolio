@@ -173,13 +173,31 @@ The internal DNS server `10.10.10.10` returned **two A records for `SOC_DC01.soc
 
 **TTL:** 1200 seconds = 20 minutes. Changing the records later would not immediately clear any previously cached responses. No records have been deleted or changed.
 
-**Next read-only check — per-interface DNS registration:**
+### Per-interface DNS dynamic registration — screenshot verified 23 October 2026
+
+The operator ran the read-only command:
 
 ```powershell
 Get-DnsClient | Select-Object InterfaceAlias, RegisterThisConnectionsAddress, UseSuffixWhenRegistering
 ```
 
-Confirm whether the `Ethernet1` (VMnet8 NAT) adapter has `RegisterThisConnectionsAddress` enabled, and compare with `Soc nw` (VMnet1). This setting may explain dynamic registration, although the existing NAT A record could persist from an earlier configuration even if registration is now disabled. Check current settings before any DNS edits.
+The initial attempt contained a typo, `SelectObject` rather than `Select-Object`, and failed without changing settings. The corrected command succeeded:
+
+| Interface alias | RegisterThisConnectionsAddress | UseSuffixWhenRegistering | Role |
+| --- | --- | --- | --- |
+| `Soc nw` | **True** | False | Internal VMnet1 adapter, `10.10.10.10` |
+| `Ethernet1` | **True** | False | VMnet8 NAT adapter, `192.168.111.130` |
+| `Loopback Pseudo-Interface 1` | **True** | False | System loopback interface |
+
+**Finding:** The NAT adapter currently permits dynamic registration of its address in DNS. That is a plausible mechanism for the unwanted `192.168.111.130` A records previously retrieved from the AD DNS server. `UseSuffixWhenRegistering=False` does **not** disable registration of the host's primary DNS name.
+
+**Remediation plan (NOT YET EXECUTED):** Retain address registration on `Soc nw` (internal VMnet1); turn off `RegisterThisConnectionsAddress` for `Ethernet1` (NAT VMnet8) after recording the other DNS publishing mechanisms and preparing a rollback. This change would prevent DNS-client registration from the NAT adapter; it would **not necessarily** remove already-published A records or stop registration by the DNS Server / Netlogon services.
+
+Microsoft documents three potential sources of unwanted multihomed DC records: DNS client, DNS Server listener interfaces and Netlogon; review the DNS Server interface bindings and the zone's Name Servers tab as part of remediation. Source: [Microsoft Learn — Avoid registering unwanted NICs in DNS on a multihomed domain controller](https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/unwanted-nic-registered-dns-mulithomed-dc).
+
+**Next read-only review:** In DNS Manager, right-click `SOC_DC01` (server node) → **Properties → Interfaces**. Record whether DNS listens on all IP addresses or a selected list, and whether `192.168.111.130` appears. **Do not change or apply settings yet.**
+
+**Outstanding:** Check the `soc.home.lab` zone's Name Servers tab; verify the client's live network and use of AD DNS; examine potentially stale `192.168.254.10` record; plan backup and change/rollback validation before editing the registration controls.
 
 **Other pending checks:** Determine whether `192.168.254.10` is stale, verify current Windows 10 guest address and whether it uses internal AD DNS, review DNS Server interface binding and NAT adapter registration, and create a rollback checkpoint before changing production-like AD lab settings.
 
@@ -197,7 +215,8 @@ The submitted screenshot contained MAC addresses, IPv6 link-local addresses and 
 - [x] `SOC_DC-1`: Enumerate six zones as `Primary` (23 October PowerShell screenshot; AD integration column left blank by misspelled property)
 - [x] `SOC_DC-1`: Verify both AD zones as Primary / `IsDsIntegrated=True` (23 October PowerShell screenshot)
 - [x] `SOC_DC-1`: Resolve `SOC_DC01.soc.home.lab` against `10.10.10.10` — internal `10.10.10.10` and NAT `192.168.111.130` returned, TTL 1200 (23 October screenshot)
-- [ ] `SOC_DC-1`: Verify per-adapter DNS registration; assess stale/NAT A records and plan safe remediation
+- [x] `SOC_DC-1`: Verify adapter DNS registration — VMnet1 and NAT interfaces both `RegisterThisConnectionsAddress=True` (23 October screenshot)
+- [ ] `SOC_DC-1`: Review DNS Server listener interfaces and Name Servers tab; plan a safe change to NAT registration, including rollback and cleanup of stale/NAT A records
 - [ ] `W.10.Pro_Soc-Lab Client`: Verify guest IP, gateway and DNS
 - [ ] `Ubuntu Wazuh`: Verify guest IP, gateway and DNS
 - [ ] `Splunk-SIEM`: Verify guest IP, gateway and DNS
