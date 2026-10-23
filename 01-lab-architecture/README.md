@@ -1,7 +1,7 @@
 # VMware SOC lab architecture
 
-> **Status: Baseline draft — pending verification against VMware Workstation.**  
-> **Evidence date:** Details below were last recorded during the lab walkthrough on **16–18 October 2026**, not independently inspected on 23 October 2026. Do not treat this document as a current configuration export.
+> **Status: VM inventory verified from a VMware Workstation screenshot (23 October 2026); IP address and full network configuration still require live verification.**  
+> **Evidence:** VMware Workstation Library screenshot supplied on **23 October 2026**. Earlier network and IP details were recorded during the walkthrough on **16–18 October 2026**. Keep these different evidence sources distinct.
 
 ## Purpose and scope
 
@@ -18,51 +18,68 @@ This document describes the virtualised blue-team lab used for Security Operatio
 
 **Caution:** NAT does not by itself mean that *all* traffic is isolated from other networks. Confirm individual VM adapter assignments, host routing, firewall rules and access boundaries before running attack simulations. DHCP and gateway addresses may have changed.
 
-## Virtual machine inventory — last recorded
+## VMware Workstation Library — screenshot verified 23 October 2026
 
-These are previously discussed lab values, not a scan of the current system. Missing values are intentionally left unfilled.
+The screenshot confirms **eight VM display names** in the current VMware Workstation Library. The names are transcribed as shown, preserving their punctuation. These are **display names**, not necessarily each guest operating system's hostname.
 
-| VM name / role | Operating system / service | Recorded host-only address | Network adapters | Status |
+| VM display name — verified screenshot | Intended role / earlier lab history | Last recorded VMnet1 IP (unverified today) | Network adapter details | Evidence |
 | --- | --- | --- | --- | --- |
-| `SOC_DC-1` | Windows Server 2019 / Active Directory Domain Services (AD DS) / DNS | `10.10.10.10` | Current NIC configuration unverified | Recorded 16 Oct |
-| `DonW10` | Windows 10 Pro / domain client, Sysmon and event forwarding | `10.10.10.15` | Current NIC configuration unverified | Recorded 16 Oct |
-| Ubuntu Wazuh server (VM display name to confirm) | Wazuh manager / dashboard | `10.10.10.20` | Current NIC configuration unverified | Recorded 16 Oct |
-| `Splunk-SIEM` | Splunk Enterprise | `10.10.10.69` | VMnet1 host-only + VMnet8 NAT | Recorded 18 Oct |
-| `Caldera-SOC` | MITRE CALDERA adversary emulation | `10.10.10.99` | Host-only + NAT; exact NIC order to confirm | Recorded 18 Oct |
-| Kali Linux (VM name to confirm) | Authorised attack simulation | To verify | To verify | Inventory pending |
-| Linux Mint (VM name to confirm) | Wireshark / monitoring workstation | To verify | To verify | Inventory pending |
-| Other VM(s), if present | E.g. dedicated vulnerable test targets | To verify | To verify | Inventory pending |
+| `Kali Linux` | Authorised attack simulation | Not yet recorded | To check in VM Settings | Visible in Library |
+| `Linux Mint` | Wireshark / network monitoring | Not yet recorded | To check in VM Settings | Visible in Library |
+| `Metasploitable3` | Deliberately vulnerable training target | Not yet recorded | To check in VM Settings | Visible in Library |
+| `SOC_DC-1` | Previously configured Windows Server 2019 / Active Directory Domain Services (AD DS) / DNS | `10.10.10.10` | To check in VM Settings | Name visible; IP from prior notes |
+| `Ubuntu Wazuh` | Wazuh manager / dashboard | `10.10.10.20` | To check in VM Settings | Name visible; IP from prior notes |
+| `W.10.Pro_Soc-Lab Client` | Windows 10 domain client; guest hostname previously recorded as `DonW10` | `10.10.10.15` | To check in VM Settings | Display name visible; hostname/IP from prior notes |
+| `Splunk-SIEM` | Splunk Enterprise | `10.10.10.69` | Previously recorded VMnet1 + VMnet8; recheck | Name visible; connections/IP from prior notes |
+| `Caldera-SOC` | MITRE CALDERA adversary emulation | `10.10.10.99` | **Adapter 1: Custom (VMnet8); Adapter 2: Custom (VMnet1)** | **Both adapters screenshot verified**; IP from prior notes |
 
-**Domain:** `lab.local` (previously configured; DNS membership and current DC name require revalidation).
+### Screenshot-verified CALDERA VM details
 
-## Architecture diagram — *working baseline, not verified final topology*
+- **VM display name:** `Caldera-SOC`
+- **Power state at capture:** Powered off
+- **Allocated memory:** 8 GB
+- **Processors:** 4 (VMware summary)
+- **Virtual disk:** 60 GB SCSI disk (summary label is truncated; allocation details not independently verified)
+- **Network Adapter:** Custom (`VMnet8`)
+- **Network Adapter 2:** Custom (`VMnet1`)
+- **VM configuration path:** Present in the screenshot but intentionally omitted from the repository to avoid exposing host filesystem details
 
-The diagram below represents the two VMware networks and **only the previously recorded VM attachments**. Links do not imply a successful test of reachability, firewall permissions or telemetry flow.
+**Note:** The screenshot does **not** prove the IP addresses or DHCP settings shown elsewhere in this document; it confirms names and CALDERA's visible VM hardware configuration.
+
+**Previously configured AD domain:** `lab.local` (guest domain membership, DNS settings and current hostnames still require revalidation).
+
+## Architecture diagram — *partially verified as of 23 October 2026*
+
+**Solid edges** show CALDERA's VMware adapter connections directly visible in the screenshot. **Dashed edges** reflect previously recorded lab-subnet membership or networking and require live validation. The diagram does not establish live reachability, routing or any successful attack.
 
 ```mermaid
 flowchart TB
-    host["Windows 11 host<br/>VMware Workstation"]
-    host --> network1["VMnet1: Host-only<br/>10.10.10.0/24<br/>DHCP disabled (last recorded)"]
-    host --> network8["VMnet8: NAT<br/>192.168.111.0/24<br/>DHCP enabled (last recorded)"]
+    host["Windows 11 host<br/>VMware Workstation<br/>8 VMs visible"]
+    network1["VMnet1<br/>Host-only, 10.10.10.0/24<br/>(subnet/type last recorded)"]
+    network8["VMnet8<br/>NAT, 192.168.111.0/24<br/>(subnet/type last recorded)"]
 
-    dc["SOC_DC-1<br/>Windows Server 2019<br/>10.10.10.10"]
-    w10["DonW10<br/>Windows 10<br/>10.10.10.15"]
-    wazuh["Wazuh server<br/>10.10.10.20"]
-    splunk["Splunk-SIEM<br/>10.10.10.69"]
-    caldera["Caldera-SOC<br/>10.10.10.99"]
-    pending["Other VM attachments<br/>Kali / Linux Mint / targets:<br/>to verify"]
+    dc["SOC_DC-1<br/>10.10.10.10 (old)"]
+    w10["W.10.Pro_Soc-Lab Client<br/>10.10.10.15 (old)"]
+    wazuh["Ubuntu Wazuh<br/>10.10.10.20 (old)"]
+    splunk["Splunk-SIEM<br/>10.10.10.69 (old)"]
+    caldera["Caldera-SOC<br/>10.10.10.99 (old)"]
+    kali["Kali Linux<br/>network TBD"]
+    mint["Linux Mint<br/>network TBD"]
+    target["Metasploitable3<br/>network TBD"]
 
-    network1 --- dc
-    network1 --- w10
-    network1 --- wazuh
-    network1 --- splunk
-    network1 --- caldera
-    network8 --- splunk
-    network8 --- caldera
-    pending -. "not yet mapped" .- host
+    host --- network1
+    host --- network8
+    network1 -. "old subnet record" .- dc
+    network1 -. "old subnet record" .- w10
+    network1 -. "old subnet record" .- wazuh
+    network1 -. "old adapter record" .- splunk
+    network8 -. "old adapter record" .- splunk
+    network8 ---|"VMware screenshot: Adapter 1"| caldera
+    network1 ---|"VMware screenshot: Adapter 2"| caldera
+    host -. "adapters to check" .- kali
+    host -. "adapters to check" .- mint
+    host -. "adapters to check" .- target
 ```
-
-**Important:** The connections for the DC, endpoint and Wazuh depict their recorded **lab-subnet presence**; their actual VMnet device settings must still be checked in VMware before this is treated as a final wiring diagram.
 
 ## High-level security data flows — to validate
 
@@ -76,9 +93,9 @@ flowchart TB
 
 ## Verification checklist
 
-- [ ] Capture the **VMware Workstation Library** showing the VM display names, with personal details redacted.
+- [x] Verify all **eight VMware Workstation Library** display names from the screenshot dated 23 October 2026. Raw screenshot was **not** committed because it exposes local host path information.
 - [ ] Open **Edit → Virtual Network Editor** and verify VMnet1/VMnet8 connection type, subnet and DHCP.
-- [ ] For each VM, open **VM → Settings** and record every Network Adapter connection type.
+- [ ] For each VM, open **VM → Settings** and record every Network Adapter connection type (CALDERA's two VMnet assignments already verified from its summary).
 - [ ] On each VM, record hostname, interface name, IPv4 address/prefix, default gateway and DNS server.
 - [ ] Record which adapters are static versus DHCP-assigned.
 - [ ] Confirm that the domain client resolves the AD DNS server and that services can reach their expected log destinations.
@@ -87,9 +104,9 @@ flowchart TB
 
 ## Step-by-step collection sequence
 
-**Step 4.1 — Current VM inventory:** Start with a screenshot of the VMware Workstation Library showing all the VM names. A screenshot is preferred over assumptions from historic notes.
+**Step 4.1 — Current VM inventory: COMPLETE (display names).** A VMware Workstation Library screenshot supplied 23 October 2026 identifies eight VMs. CALDERA's memory, CPU count, disk capacity, power state and two virtual networks were also visible.
 
-**Step 4.2 — VMware virtual networks:** Record the Virtual Network Editor values for VMnet1 and VMnet8.
+**Step 4.2 — VMware virtual networks: NEXT.** In VMware Workstation open **Edit → Virtual Network Editor** and capture its VMnet1/VMnet8 network type, subnet and DHCP settings. Screenshot may be reviewed in conversation before anything is committed.
 
 **Step 4.3 — VM-to-network wiring:** Record adapter settings for each VM, including any second adapter.
 
@@ -105,4 +122,5 @@ This repository is currently private, but private repositories can still be acci
 
 | Date | Change | Verification |
 | --- | --- | --- |
-| 2026-10-23 | Initial architecture draft based on earlier VMware walkthrough | **Pending current-state validation** |
+| 2026-10-23 | Initial architecture draft based on earlier VMware walkthrough | Older network and IP values unverified |
+| 2026-10-23 | Reconciled eight VM display names and Caldera-SOC summary settings from user-provided VMware Library screenshot | VM names and Caldera-SOC adapters **screenshot verified**; other VM networks and guest IPs pending |
