@@ -76,13 +76,17 @@ The screenshot also shows an earlier failed command due to mistyping `Get-DnsCli
 
 **Interpretation:** Two separate read-only commands now show `0.0.0.0` for the internal adapter and `192.168.111.2` for the NAT adapter. This confirms the Windows DNS client configuration, **not that the DNS server service is active or resolving Active Directory records**. No DNS changes have been made or claimed.
 
-**Next read-only verification command (PowerShell, Domain Controller):**
+### DNS Server service status — operator confirmation (23 October 2026)
+
+The lab owner reports that `Get-Service -Name DNS` returned **Running** on `SOC_DC01`. This is **operator-reported**, not independently screenshot-verified. It confirms the Windows DNS Server service is running at the time of the check, **not** that the correct DNS zones exist, AD DNS registrations are healthy, or that DNS client resolution works.
+
+**Next read-only verification — actual Active Directory domain:**
 
 ```powershell
-Get-Service -Name DNS
+Get-ADDomain | Select-Object DNSRoot, NetBIOSName
 ```
 
-Check that the Windows DNS Server service is installed and its current status is `Running`. Then inspect the actual Active Directory domain and DNS zones before considering resolver changes.
+This queries the Active Directory domain information and avoids assuming that the primary DNS suffix is the AD domain name. After confirming the actual domain, inspect the DNS zones and test the internal DNS service before changing client settings.
 
 ### Data handling
 
@@ -92,7 +96,8 @@ The submitted screenshot contained MAC addresses, IPv6 link-local addresses and 
 
 - [x] `SOC_DC-1`: Capture IP, gateway, DHCP and DNS values from `ipconfig /all` (23 October 2026)
 - [x] `SOC_DC-1`: Confirm DNS client settings with `Get-DnsClientServerAddress` (23 October 2026)
-- [ ] `SOC_DC-1`: Verify DNS Server service (`Get-Service -Name DNS`), AD domain, DNS zones and DNS registration on the NAT adapter
+- [x] `SOC_DC-1`: DNS Server service reported `Running` (operator confirmation, 23 October 2026)
+- [ ] `SOC_DC-1`: Verify actual AD domain (`Get-ADDomain`), DNS zones, and DNS registration on the NAT adapter
 - [ ] `W.10.Pro_Soc-Lab Client`: Verify guest IP, gateway and DNS
 - [ ] `Ubuntu Wazuh`: Verify guest IP, gateway and DNS
 - [ ] `Splunk-SIEM`: Verify guest IP, gateway and DNS
