@@ -87,6 +87,14 @@ flowchart TB
     host -. "adapters to check" .- target
 ```
 
+## Network adapter evidence — screenshot set from 23 October 2026
+
+See [Network adapter evidence — six unlabelled configurations](adapter-evidence.md) for a transcription of twelve Virtual Machine Settings screenshots, grouped into six two-adapter profiles with memory, CPU and disk details.
+
+**Evidence limitation:** These screenshots show no selected VM name, so they are **not yet tied to individual VMs**. The configuration pair showing a 60 GB SCSI disk, VMnet8 on adapter 1 and VMnet1 on adapter 2 is consistent with the earlier named CALDERA screenshot, but the match is not independent identity confirmation. Keep the named VM inventory above unchanged until direct mapping is provided.
+
+**Safety review:** Before attack simulations, confirm that `Metasploitable3` does not have unnecessary NAT access and that dual-homed VMs cannot unintentionally route traffic between host-only and external networks.
+
 ## High-level security data flows — to validate
 
 - `DonW10` Windows Event Logs and Sysmon events → log collection / Wazuh agent and/or Splunk forwarder.
@@ -101,7 +109,7 @@ flowchart TB
 
 - [x] Verify all **eight VMware Workstation Library** display names from the screenshot dated 23 October 2026. Raw screenshot was **not** committed because it exposes local host path information.
 - [x] Verify **Edit → Virtual Network Editor** screenshots: VMnet1 and VMnet8 connection types, subnet addresses, `/24` masks, connected host adapters and DHCP settings (23 October 2026). NAT gateway address will be checked during guest IP validation.
-- [ ] For each VM, open **VM → Settings** and record every Network Adapter connection type (CALDERA's two VMnet assignments already verified from its summary).
+- [ ] Match all named VMs to network adapters: CALDERA's two are verified from its named Library view; six additional unlabelled two-adapter profiles are documented separately but require name matching.
 - [ ] On each VM, record hostname, interface name, IPv4 address/prefix, default gateway and DNS server.
 - [ ] Record which adapters are static versus DHCP-assigned.
 - [ ] Confirm that the domain client resolves the AD DNS server and that services can reach their expected log destinations.
@@ -114,7 +122,7 @@ flowchart TB
 
 **Step 4.2 — VMware virtual networks: COMPLETE.** Both Virtual Network Editor screenshots confirm VMnet1 Host-only (`10.10.10.0/24`, DHCP disabled) and VMnet8 NAT (`192.168.111.0/24`, DHCP enabled), with connected host adapters. NAT gateway address remains unverified and will be checked during Step 4.4.
 
-**Step 4.3 — VM-to-network wiring: NEXT.** For each VM, open **VM → Settings → Network Adapter** and record the `Custom (VMnetX)` selection (or other connection type), including any second adapter. CALDERA's VMnet8 + VMnet1 assignments are already verified.
+**Step 4.3 — VM-to-network wiring: IN PROGRESS.** Twelve Hardware-tab screenshots give six network-adapter profiles (see [adapter evidence](adapter-evidence.md)), but the screenshots do **not** display selected VM names. CALDERA's VMnet8 + VMnet1 assignments are independently verified from its earlier Library view. Next, match the remaining configurations to named VMs without guessing.
 
 **Step 4.4 — Guest IP and DNS:** Validate addresses and network routes inside the running VMs; preserve only redacted evidence.
 
@@ -132,3 +140,4 @@ This repository is currently private, but private repositories can still be acci
 | 2026-10-23 | Reconciled eight VM display names and Caldera-SOC summary settings from user-provided VMware Library screenshot | VM names and Caldera-SOC adapters **screenshot verified**; other VM networks and guest IPs pending |
 | 2026-10-23 | Confirmed VMnet1 Host-only 10.10.10.0/24 DHCP off; VMnet8 NAT 192.168.111.0 DHCP on, both host connected | First Virtual Network Editor screenshot; VMnet8 mask initially not shown |
 | 2026-10-23 | Confirmed VMnet8 subnet mask 255.255.255.0 (/24), connected VMware host adapter and enabled DHCP | Second Virtual Network Editor screenshot; NAT gateway remains unverified |
+| 2026-10-23 | Transcribed 12 Virtual Machine Settings screenshots into six pairs of adapters and hardware configurations | Named VM attribution pending because the dialogs do not display VM names |
