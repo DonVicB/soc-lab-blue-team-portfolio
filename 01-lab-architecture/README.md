@@ -145,7 +145,7 @@ The **screenshots verify the hardware values** but did not display VM names; the
 
 **Step 4.3 — VM-to-network wiring: COMPLETE (8 of 8 VMs documented).** Six screenshot pairs mapped to names by the owner (A–F); `Caldera-SOC`, `Linux Mint` and `Metasploitable3` also have directly identified Library summaries. Configuration review is **not** equivalent to proving guest network isolation. **Security follow-up:** restrict Metasploitable3's NAT exposure before future vulnerable-target sessions.
 
-**Step 4.4 — Guest IP and DNS:** Validate addresses and network routes inside the running VMs; preserve only redacted evidence.
+**Step 4.4 — Guest IP and DNS: NEXT.** Validate current addresses, gateways and DNS on the Domain Controller first. Metasploitable3's VMnet8 Adapter 2 was disabled for power-on and the save confirmed by the owner on 23 October 2026; runtime isolation still requires testing. Preserve only redacted evidence.
 
 **Step 4.5 — Final map:** Replace this draft with an evidence-based diagram and mark the revision as verified.
 
