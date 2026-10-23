@@ -55,6 +55,15 @@ The screenshots directly show the VM names and summaries, so **no operator infer
 
 Before booting the target for future attack simulation, review whether it truly needs outside network access. **Recommended:** remove or disconnect Adapter 2 for ordinary isolated testing and retain VMnet1 for authorised attack traffic. If internet access is essential for a specific maintenance task, enable it temporarily with appropriate controls. Also review NAT port forwarding, host firewall rules, guest forwarding/bridging and potential exposure to the host/network.
 
+### NAT adapter isolation change — 23 October 2026 (save not yet confirmed)
+
+A later VMware Virtual Machine Settings screenshot matches `Metasploitable3` (6.1 GB RAM, 4 processors, 39.1 GB SCSI virtual disk) and shows **Network Adapter 2** still assigned to **Custom (VMnet8)** with both **Connected** and **Connect at power on** **unchecked**.
+
+- **Observed in settings dialog:** Both connection checkboxes unchecked for the NAT adapter.
+- **What this controls:** The second adapter should not automatically connect when the VM powers on **once the setting is saved**; this does **not** remove the adapter or the Custom VMnet8 assignment.
+- **Persistence verification pending:** The screenshot was taken before evidence of clicking **OK**. Reopen VM settings after saving and verify that `Connect at power on` remains off before starting the vulnerable target.
+- **Remaining:** Confirm VMnet1 Adapter 1 still has `Connect at power on` enabled. If necessary, inspect host NAT port-forwarding and guest network routes. A disconnected NAT adapter reduces exposure but does not by itself verify full isolation.
+
 ### Guest validation still pending
 
 The screenshots prove virtual adapter *assignments*, not guest link status, interface IP, DNS, gateway or IP forwarding. Track those separately during guest-level verification.
@@ -71,7 +80,7 @@ The screenshots prove virtual adapter *assignments*, not guest link status, inte
 ## Next evidence needed
 
 1. **Done:** Named Library summaries for `Linux Mint` and `Metasploitable3` now show both adapters and hardware allocations.
-2. **Next:** Check current guest IPv4 addressing, default gateways, DNS and forwarding. Prioritise an isolation decision for `Metasploitable3` before powering it on.
+2. **Next:** Save and recheck `Metasploitable3` Network Adapter 2 (`Connect at power on` off), then confirm Adapter 1 VMnet1 is enabled before powering on. Afterward check current guest IPv4 addressing, default gateways, DNS and forwarding.
 3. Cross-check operator-provided A–F associations against the named VMware Library VM summaries if a wholly screenshot-backed audit trail is desired.
 
 **Privacy:** No raw screenshot has been committed; this document is a textual, sanitised transcription only.
