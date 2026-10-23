@@ -16,11 +16,11 @@ The following VMware virtual network settings are **confirmed from the Virtual N
 | Network | Connection type | Subnet shown | Host connection | Local DHCP | Subnet mask | Evidence |
 | --- | --- | --- | --- | --- | --- | --- |
 | `VMnet1` | Host-only | `10.10.10.0` | Connected | Disabled | `255.255.255.0` (`/24`) | Type, table row and detailed VMnet1 pane |
-| `VMnet8` | NAT (Network Address Translation) | `192.168.111.0` | Connected | Enabled | **Not visible** in screenshot | Table row only |
+| `VMnet8` | NAT (Network Address Translation) | `192.168.111.0` | Connected | Enabled | `255.255.255.0` (`/24`) | VMnet8 detailed pane screenshot dated 23 Oct 2026 |
 
 **VMnet1 details:** Host virtual adapter enabled and labelled `VMware Network Adapter VMnet1`; the `Use local DHCP service to distribute IP address to VMs` option is unchecked. VMware displays `10.10.10.0` with `255.255.255.0` mask.
 
-**VMnet8 details:** Network type NAT, host connection Connected, DHCP Enabled, subnet address `192.168.111.0`. The VMnet8 mask and NAT gateway are **not shown** because VMnet1 is selected in the detailed pane. Earlier lab notes recorded `192.168.111.0/24`, but **the /24 has not yet been reconfirmed**.
+**VMnet8 details:** Network type NAT, host connection Connected, DHCP Enabled and subnet address `192.168.111.0`. A second screenshot, with VMnet8 selected, confirms subnet mask `255.255.255.0` (`/24`), the enabled `VMware Network Adapter VMnet8` host adapter, and the enabled local DHCP service. The **NAT gateway address is not shown** and remains unverified.
 
 **Segmentation note:** Host-only means VMnet1 is not directly bridged to the physical LAN; the VMware host can still communicate over its virtual adapter. Any guest with both host-only and NAT NICs might bridge or route between networks if configured to do so. NAT is not a complete isolation control. Validate guest routes and firewall rules before adversary-emulation exercises.
 
@@ -56,13 +56,13 @@ The screenshot confirms **eight VM display names** in the current VMware Worksta
 
 ## Architecture diagram — *partially verified as of 23 October 2026*
 
-**Network nodes** now reflect the Virtual Network Editor screenshot (VMnet8 subnet mask still unknown). **Solid edges** show CALDERA's VMware adapter connections directly visible in the earlier Library screenshot. **Dashed edges** reflect historical VM membership or adapter records that require live verification. This does not establish live reachability, routing or successful attacks.
+**Network nodes** now reflect the two Virtual Network Editor screenshots, including both verified `/24` subnet masks. **Solid edges** show CALDERA's VMware adapter connections directly visible in the earlier Library screenshot. **Dashed edges** reflect historical VM membership or adapter records that require live verification. This does not establish live reachability, routing or successful attacks.
 
 ```mermaid
 flowchart TB
     host["Windows 11 host<br/>VMware Workstation<br/>8 VMs visible"]
     network1["VMnet1<br/>Host-only, 10.10.10.0/24<br/>(type/subnet screenshot verified)"]
-    network8["VMnet8<br/>NAT, 192.168.111.0<br/>(type/subnet verified; mask TBD)"]
+    network8["VMnet8<br/>NAT, 192.168.111.0/24<br/>(type/subnet/mask verified)"]
 
     dc["SOC_DC-1<br/>10.10.10.10 (old)"]
     w10["W.10.Pro_Soc-Lab Client<br/>10.10.10.15 (old)"]
@@ -100,7 +100,7 @@ flowchart TB
 ## Verification checklist
 
 - [x] Verify all **eight VMware Workstation Library** display names from the screenshot dated 23 October 2026. Raw screenshot was **not** committed because it exposes local host path information.
-- [x] Verify **Edit → Virtual Network Editor** screenshot: VMnet1/VMnet8 type, displayed subnet address, host connection and DHCP state (23 October 2026); VMnet1 mask also verified. VMnet8 mask/gateway still pending.
+- [x] Verify **Edit → Virtual Network Editor** screenshots: VMnet1 and VMnet8 connection types, subnet addresses, `/24` masks, connected host adapters and DHCP settings (23 October 2026). NAT gateway address will be checked during guest IP validation.
 - [ ] For each VM, open **VM → Settings** and record every Network Adapter connection type (CALDERA's two VMnet assignments already verified from its summary).
 - [ ] On each VM, record hostname, interface name, IPv4 address/prefix, default gateway and DNS server.
 - [ ] Record which adapters are static versus DHCP-assigned.
@@ -112,7 +112,7 @@ flowchart TB
 
 **Step 4.1 — Current VM inventory: COMPLETE (display names).** A VMware Workstation Library screenshot supplied 23 October 2026 identifies eight VMs. CALDERA's memory, CPU count, disk capacity, power state and two virtual networks were also visible.
 
-**Step 4.2 — VMware virtual networks: COMPLETE for displayed settings.** Virtual Network Editor screenshot verifies both network types, subnet addresses, host connection and DHCP; VMnet1 mask verified as /24. VMnet8 subnet mask and NAT gateway are not visible and remain to be checked if needed.
+**Step 4.2 — VMware virtual networks: COMPLETE.** Both Virtual Network Editor screenshots confirm VMnet1 Host-only (`10.10.10.0/24`, DHCP disabled) and VMnet8 NAT (`192.168.111.0/24`, DHCP enabled), with connected host adapters. NAT gateway address remains unverified and will be checked during Step 4.4.
 
 **Step 4.3 — VM-to-network wiring: NEXT.** For each VM, open **VM → Settings → Network Adapter** and record the `Custom (VMnetX)` selection (or other connection type), including any second adapter. CALDERA's VMnet8 + VMnet1 assignments are already verified.
 
@@ -130,4 +130,5 @@ This repository is currently private, but private repositories can still be acci
 | --- | --- | --- |
 | 2026-10-23 | Initial architecture draft based on earlier VMware walkthrough | Older network and IP values unverified |
 | 2026-10-23 | Reconciled eight VM display names and Caldera-SOC summary settings from user-provided VMware Library screenshot | VM names and Caldera-SOC adapters **screenshot verified**; other VM networks and guest IPs pending |
-| 2026-10-23 | Confirmed VMnet1 Host-only 10.10.10.0/24 DHCP off; VMnet8 NAT 192.168.111.0 DHCP on, both host connected | Virtual Network Editor screenshot verified; VMnet8 mask/gateway not shown |
+| 2026-10-23 | Confirmed VMnet1 Host-only 10.10.10.0/24 DHCP off; VMnet8 NAT 192.168.111.0 DHCP on, both host connected | First Virtual Network Editor screenshot; VMnet8 mask initially not shown |
+| 2026-10-23 | Confirmed VMnet8 subnet mask 255.255.255.0 (/24), connected VMware host adapter and enabled DHCP | Second Virtual Network Editor screenshot; NAT gateway remains unverified |
