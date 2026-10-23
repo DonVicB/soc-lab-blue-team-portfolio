@@ -17,7 +17,7 @@
 | IP Routing Enabled | **No** |
 | WINS Proxy Enabled | No |
 
-**Important correction:** Earlier informal lab history mentioned a domain `lab.local`. The **current primary DNS suffix is `soc.home.lab`**, not `lab.local`. The screenshot alone does not prove the AD forest/domain name; verify it from Active Directory before describing `soc.home.lab` as the authoritative domain.
+**Important correction:** Earlier informal lab history mentioned `lab.local`, but the lab owner has now confirmed the actual Active Directory domain as `soc.home.lab` using `Get-ADDomain | Select-Object DNSRoot, NetBIOSName` on 23 October 2026. The NetBIOS domain name is `SOC`. The PowerShell values were **operator-reported**, not screenshot-verified; the server's primary DNS suffix was independently visible in the preceding screenshot. AD forest name and DNS zone health have not yet been checked.
 
 ### Adapter 1 — internal SOC network
 
@@ -80,13 +80,30 @@ The screenshot also shows an earlier failed command due to mistyping `Get-DnsCli
 
 The lab owner reports that `Get-Service -Name DNS` returned **Running** on `SOC_DC01`. This is **operator-reported**, not independently screenshot-verified. It confirms the Windows DNS Server service is running at the time of the check, **not** that the correct DNS zones exist, AD DNS registrations are healthy, or that DNS client resolution works.
 
-**Next read-only verification — actual Active Directory domain:**
+### Active Directory domain — operator confirmation (23 October 2026)
+
+The lab owner ran:
 
 ```powershell
 Get-ADDomain | Select-Object DNSRoot, NetBIOSName
 ```
 
-This queries the Active Directory domain information and avoids assuming that the primary DNS suffix is the AD domain name. After confirming the actual domain, inspect the DNS zones and test the internal DNS service before changing client settings.
+and reported the following output:
+
+| Field | Value | Provenance |
+| --- | --- | --- |
+| `DNSRoot` | `soc.home.lab` | Operator-reported PowerShell output |
+| `NetBIOSName` | `SOC` | Operator-reported PowerShell output |
+
+This confirms that the AD domain's DNS name matches the previously observed primary DNS suffix. It corrects the historical `lab.local` note. No Active Directory or DNS configuration was changed.
+
+**Next read-only step — enumerate Windows DNS Server zones:**
+
+```powershell
+Get-DnsServerZone | Select-Object ZoneName, ZoneType, IsDsIntegrated
+```
+
+Inspect the zones actually returned; in particular, look for `soc.home.lab` and any domain-controller locator zones such as `_msdcs.soc.home.lab`. Do **not** infer that a zone exists simply because the AD domain exists. After zone inspection, test lookups against the internal DNS service and review DNS client settings before modifying them.
 
 ### Data handling
 
@@ -97,7 +114,8 @@ The submitted screenshot contained MAC addresses, IPv6 link-local addresses and 
 - [x] `SOC_DC-1`: Capture IP, gateway, DHCP and DNS values from `ipconfig /all` (23 October 2026)
 - [x] `SOC_DC-1`: Confirm DNS client settings with `Get-DnsClientServerAddress` (23 October 2026)
 - [x] `SOC_DC-1`: DNS Server service reported `Running` (operator confirmation, 23 October 2026)
-- [ ] `SOC_DC-1`: Verify actual AD domain (`Get-ADDomain`), DNS zones, and DNS registration on the NAT adapter
+- [x] `SOC_DC-1`: Confirm AD domain as `soc.home.lab` and NetBIOS domain as `SOC` (`Get-ADDomain`; operator report, 23 October 2026)
+- [ ] `SOC_DC-1`: Inspect DNS Server zones, test resolution and review DNS registration on the NAT adapter
 - [ ] `W.10.Pro_Soc-Lab Client`: Verify guest IP, gateway and DNS
 - [ ] `Ubuntu Wazuh`: Verify guest IP, gateway and DNS
 - [ ] `Splunk-SIEM`: Verify guest IP, gateway and DNS
