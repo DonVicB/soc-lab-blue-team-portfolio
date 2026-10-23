@@ -52,7 +52,7 @@ The screenshot confirms **eight VM display names** in the current VMware Worksta
 
 **Note:** The **VMware Library** screenshot confirms VM names and CALDERA's visible hardware and adapter assignments, **not guest IP addresses**. The later **Virtual Network Editor** screenshot confirms the virtual network types, listed subnet addresses and DHCP settings as described above.
 
-**Current Windows Server identity (23 Oct screenshot):** VMware display name `SOC_DC-1`; Windows hostname `SOC_DC01`; primary DNS suffix `soc.home.lab`. Historic notes describing `lab.local` do not match the observed suffix. Verify the actual AD domain before calling `soc.home.lab` the AD domain. See [guest IP and DNS evidence](guest-ip-dns.md).
+**Current Windows Server and AD identity (23 Oct evidence):** VMware display name `SOC_DC-1`; guest hostname `SOC_DC01`; screenshot-confirmed primary DNS suffix `soc.home.lab`. The lab owner subsequently reported `Get-ADDomain` results: **DNSRoot `soc.home.lab`, NetBIOSName `SOC`**. This replaces the historic `lab.local` note. See [guest IP and DNS evidence](guest-ip-dns.md).
 
 ## Architecture diagram — *all VM adapter assignments documented, 23 October 2026*
 
@@ -118,7 +118,7 @@ The **screenshots verify the hardware values** but did not display VM names; the
 
 ## Guest IP, gateway and DNS evidence — Step 4.4
 
-The [live guest network inventory](guest-ip-dns.md) now records `SOC_DC-1` (Windows hostname `SOC_DC01`) with internal `10.10.10.10/24` (static), no gateway on the internal adapter, and NAT `192.168.111.130/24` (DHCP) with gateway `192.168.111.2`. **DNS requires verification:** the internal NIC reports `0.0.0.0` and the NAT NIC reports `192.168.111.2`. Windows reports `IP Routing Enabled: No`. The live guest screenshot reports primary DNS suffix `soc.home.lab`; this is not confirmation of the current AD domain name.
+The [live guest network inventory](guest-ip-dns.md) now records `SOC_DC-1` (Windows hostname `SOC_DC01`) with internal `10.10.10.10/24` (static), no gateway on the internal adapter, and NAT `192.168.111.130/24` (DHCP) with gateway `192.168.111.2`. **DNS requires verification:** the internal NIC reports `0.0.0.0` and the NAT NIC reports `192.168.111.2`. Windows reports `IP Routing Enabled: No`. The screenshot reports primary DNS suffix `soc.home.lab`; the lab owner separately confirmed Active Directory DNSRoot `soc.home.lab` and NetBIOSName `SOC` with `Get-ADDomain`.
 
 ## High-level security data flows — to validate
 
@@ -149,7 +149,7 @@ The [live guest network inventory](guest-ip-dns.md) now records `SOC_DC-1` (Wind
 
 **Step 4.3 — VM-to-network wiring: COMPLETE (8 of 8 VMs documented).** Six screenshot pairs mapped to names by the owner (A–F); `Caldera-SOC`, `Linux Mint` and `Metasploitable3` also have directly identified Library summaries. Configuration review is **not** equivalent to proving guest network isolation. **Security follow-up:** restrict Metasploitable3's NAT exposure before future vulnerable-target sessions.
 
-**Step 4.4 — Guest IP and DNS: IN PROGRESS.** The 23 October `ipconfig /all` and `Get-DnsClientServerAddress` screenshots verify `SOC_DC01` IPs, gateways and DNS client servers (`Soc nw`: `0.0.0.0`; `Ethernet1`: `192.168.111.2`). See [guest IP and DNS](guest-ip-dns.md). **DNS Server service reportedly Running** (23 October 2026, operator confirmation). **Next:** identify the actual AD domain using read-only `Get-ADDomain | Select-Object DNSRoot, NetBIOSName`, then inspect DNS zones and resolution before making changes. Metasploitable3 NAT Adapter 2 was disabled at power-on and the save confirmed by the owner; live isolation remains untested.
+**Step 4.4 — Guest IP and DNS: IN PROGRESS.** The 23 October `ipconfig /all` and `Get-DnsClientServerAddress` screenshots verify `SOC_DC01` IPs, gateways and DNS client servers (`Soc nw`: `0.0.0.0`; `Ethernet1`: `192.168.111.2`). See [guest IP and DNS](guest-ip-dns.md). **DNS Server service reportedly Running** (23 October 2026, operator confirmation). **AD domain confirmed by the lab owner:** `soc.home.lab` (NetBIOS `SOC`). **Next:** inspect DNS zones with `Get-DnsServerZone | Select-Object ZoneName, ZoneType, IsDsIntegrated` and test resolution before making changes. Metasploitable3 NAT Adapter 2 was disabled at power-on and the save confirmed by the owner; live isolation remains untested.
 
 **Step 4.5 — Final map:** Replace this draft with an evidence-based diagram and mark the revision as verified.
 
@@ -171,3 +171,4 @@ This repository is currently private, but private repositories can still be acci
 | 2026-10-23 | Captured SOC_DC-1 guest `ipconfig /all`, corrected observed host/suffix, verified VMnet1/NAT addresses and flagged DNS configuration | Live screenshot values transcribed; DNS client settings and actual AD domain to verify |
 | 2026-10-23 | Confirmed Domain Controller DNS client servers from read-only PowerShell output | Internal `0.0.0.0`, NAT `192.168.111.2`; DNS service and resolution still untested |
 | 2026-10-23 | DNS Server service reported Running on SOC_DC01 | Operator-reported; AD domain, zones and actual resolution not yet verified |
+| 2026-10-23 | Confirmed actual AD domain `soc.home.lab` and NetBIOS name `SOC` via `Get-ADDomain` | Operator-reported PowerShell output; DNS zones and resolution remain unverified |
