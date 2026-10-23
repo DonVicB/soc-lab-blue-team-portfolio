@@ -195,7 +195,23 @@ The initial attempt contained a typo, `SelectObject` rather than `Select-Object`
 
 Microsoft documents three potential sources of unwanted multihomed DC records: DNS client, DNS Server listener interfaces and Netlogon; review the DNS Server interface bindings and the zone's Name Servers tab as part of remediation. Source: [Microsoft Learn — Avoid registering unwanted NICs in DNS on a multihomed domain controller](https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/unwanted-nic-registered-dns-mulithomed-dc).
 
-**Next read-only review:** In DNS Manager, right-click `SOC_DC01` (server node) → **Properties → Interfaces**. Record whether DNS listens on all IP addresses or a selected list, and whether `192.168.111.130` appears. **Do not change or apply settings yet.**
+### DNS Server listening interfaces — screenshot verified 24 October 2026
+
+A screenshot of **DNS Manager → SOC_DC01 Properties → Interfaces** shows **Listen on: All IP addresses** selected. The pane lists (with checkmarks) the following server interfaces:
+
+- Internal IPv4: `10.10.10.10` (VMnet1)
+- NAT IPv4: `192.168.111.130` (VMnet8)
+- Two IPv6 link-local interface addresses (values deliberately omitted from the portfolio)
+
+The `Only the following IP addresses` radio control is **not** selected. Therefore, DNS Server is configured to listen on all bound addresses, **including the NAT adapter**. The checkboxes shown in the inactive selection list are not evidence of an active restricted listener policy. This is a **DNS service listener** setting and is distinct from the previously verified `RegisterThisConnectionsAddress=True` DNS client configuration.
+
+**Security finding:** A multihomed AD Domain Controller is both publishing a NAT-related A record and listening for DNS queries on the NAT-facing interface. This can widen the set of lab systems able to reach the DNS service; the screenshot does **not** prove which systems can actually reach it through VMware routing/firewall controls. Restricting DNS Server listeners would **not by itself** delete existing NAT A records.
+
+A DNS/Active Directory initial-synchronisation warning is visible in Server Manager behind the properties window. Its current/historical status is **unknown**; do not conclude that directory replication is presently broken. Verify separately if still active.
+
+**No changes were applied** during this observation. An interface-listening change and NAT address-registration cleanup should be planned together only after validation and a usable rollback point.
+
+**Next read-only review:** In DNS Manager, expand **Forward Lookup Zones**, right-click `soc.home.lab` → **Properties → Name Servers**. Capture the listed name-server names and IP addresses to establish whether the NAT address also appears as an NS/glue address. Do not click Apply or delete entries yet.
 
 **Outstanding:** Check the `soc.home.lab` zone's Name Servers tab; verify the client's live network and use of AD DNS; examine potentially stale `192.168.254.10` record; plan backup and change/rollback validation before editing the registration controls.
 
@@ -216,7 +232,8 @@ The submitted screenshot contained MAC addresses, IPv6 link-local addresses and 
 - [x] `SOC_DC-1`: Verify both AD zones as Primary / `IsDsIntegrated=True` (23 October PowerShell screenshot)
 - [x] `SOC_DC-1`: Resolve `SOC_DC01.soc.home.lab` against `10.10.10.10` — internal `10.10.10.10` and NAT `192.168.111.130` returned, TTL 1200 (23 October screenshot)
 - [x] `SOC_DC-1`: Verify adapter DNS registration — VMnet1 and NAT interfaces both `RegisterThisConnectionsAddress=True` (23 October screenshot)
-- [ ] `SOC_DC-1`: Review DNS Server listener interfaces and Name Servers tab; plan a safe change to NAT registration, including rollback and cleanup of stale/NAT A records
+- [x] `SOC_DC-1`: DNS Server Interfaces tab shows `All IP addresses`, including NAT `192.168.111.130` (24 October screenshot)
+- [ ] `SOC_DC-1`: Review `soc.home.lab` Name Servers tab and current AD initial-synchronisation warning, then plan rollback-safe DNS registration, listener and stale A-record remediation
 - [ ] `W.10.Pro_Soc-Lab Client`: Verify guest IP, gateway and DNS
 - [ ] `Ubuntu Wazuh`: Verify guest IP, gateway and DNS
 - [ ] `Splunk-SIEM`: Verify guest IP, gateway and DNS
