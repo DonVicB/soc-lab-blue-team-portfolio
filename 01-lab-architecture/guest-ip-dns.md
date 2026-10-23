@@ -58,13 +58,31 @@ The VMware Virtual Network Editor separately confirmed `VMnet1` as Host-only (`1
 
 **Segmentation note:** Windows reporting `IP Routing Enabled: No` is useful evidence but not a conclusive isolation test. Later check guest forwarding, network routes, firewall and bridge policies, especially on dual-homed systems.
 
-**Next read-only verification command (PowerShell, Domain Controller):**
+### DNS client verification — 23 October 2026
+
+A second VMware screenshot, with `SOC_DC-1` selected, shows the successful execution of:
 
 ```powershell
 Get-DnsClientServerAddress -AddressFamily IPv4 | Format-Table InterfaceAlias, ServerAddresses -AutoSize
 ```
 
-This queries Windows DNS client settings and reveals the IPv4 DNS servers configured for each interface. Record the result before making changes. After DNS settings are understood, verify the actual AD domain and DNS service separately.
+| Windows interface alias | IPv4 DNS client server addresses | Evidence |
+| --- | --- | --- |
+| `Soc nw` | `{0.0.0.0}` | Read-only PowerShell output |
+| `Ethernet1` | `{192.168.111.2}` | Read-only PowerShell output |
+| `Loopback Pseudo-Interface 1` | `{}` (none listed) | Read-only PowerShell output |
+
+The screenshot also shows an earlier failed command due to mistyping `Get-DnsClientServicesAddress`; the later `Get-DnsClientServerAddress` command succeeded. There is no indication the failure changed any settings.
+
+**Interpretation:** Two separate read-only commands now show `0.0.0.0` for the internal adapter and `192.168.111.2` for the NAT adapter. This confirms the Windows DNS client configuration, **not that the DNS server service is active or resolving Active Directory records**. No DNS changes have been made or claimed.
+
+**Next read-only verification command (PowerShell, Domain Controller):**
+
+```powershell
+Get-Service -Name DNS
+```
+
+Check that the Windows DNS Server service is installed and its current status is `Running`. Then inspect the actual Active Directory domain and DNS zones before considering resolver changes.
 
 ### Data handling
 
@@ -73,8 +91,8 @@ The submitted screenshot contained MAC addresses, IPv6 link-local addresses and 
 ## Remaining guest verification
 
 - [x] `SOC_DC-1`: Capture IP, gateway, DHCP and DNS values from `ipconfig /all` (23 October 2026)
-- [ ] `SOC_DC-1`: Confirm DNS client settings with `Get-DnsClientServerAddress`
-- [ ] `SOC_DC-1`: Verify AD domain, DNS service and DNS registration on the NAT adapter
+- [x] `SOC_DC-1`: Confirm DNS client settings with `Get-DnsClientServerAddress` (23 October 2026)
+- [ ] `SOC_DC-1`: Verify DNS Server service (`Get-Service -Name DNS`), AD domain, DNS zones and DNS registration on the NAT adapter
 - [ ] `W.10.Pro_Soc-Lab Client`: Verify guest IP, gateway and DNS
 - [ ] `Ubuntu Wazuh`: Verify guest IP, gateway and DNS
 - [ ] `Splunk-SIEM`: Verify guest IP, gateway and DNS
