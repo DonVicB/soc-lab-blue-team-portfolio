@@ -291,6 +291,24 @@ This runs Windows Domain Controller Diagnostics' DNS test against `SOC_DC01`; co
 
 **Other pending checks:** Determine whether `192.168.254.10` is stale, verify current Windows 10 guest address and whether it uses internal AD DNS, review DNS Server interface binding and NAT adapter registration, and create a rollback checkpoint before changing production-like AD lab settings.
 
+### Attempted DNS remediation — screenshot verified 24 October 2026
+
+PowerShell on `SOC_DC01` shows these commands run with **no visible errors**:
+
+```powershell
+Set-DnsClient -InterfaceAlias "Ethernet1" -RegisterThisConnectionsAddress $false
+Set-DnsClientServerAddress -InterfaceAlias "Soc nw" -ServerAddresses 10.10.10.10
+Set-DnsClientServerAddress -InterfaceAlias "Ethernet1" -ServerAddresses 10.10.10.10
+```
+
+The commands are visible more than once in the terminal history. Their lack of errors suggests execution, but the screenshot does not independently confirm the settings persisted; rechecking them is possible later if necessary. It does **not** confirm whether the DNS Server listener was restricted.
+
+**Post-command verification:** Two direct queries of `soc_dc01.soc.home.lab` against `10.10.10.10` still returned both A records (`192.168.111.130` and `10.10.10.10`), each with TTL 1200 seconds.
+
+**Interpretation:** Disabling NAT adapter dynamic DNS registration does **not automatically remove pre-existing A records**. Cleanup is still needed. Avoid removing records by name alone: the DC's correct internal `10.10.10.10` record must remain.
+
+**Focused next action (not yet performed):** After confirming a valid backup/rollback, remove only the unwanted `soc_dc01` A record with `RecordData="192.168.111.130"`, using DNS Manager or `Remove-DnsServerResourceRecord -ZoneName "soc.home.lab" -Name "soc_dc01" -RRType A -RecordData "192.168.111.130"`. Independently review the zone-apex A records (`192.168.111.130`, `192.168.254.10`) and ensure a correct internal apex A record before changing those records. Re-query DNS and move back to verifying the other VMs; only revisit if unwanted records return.
+
 ### Data handling
 
 The submitted screenshot contained MAC addresses, IPv6 link-local addresses and Windows guest UI information. To reduce unnecessary disclosure, these identifier values and the raw PDF were **not** committed; only the operationally relevant IPv4, DNS and adapter settings are transcribed.
@@ -311,7 +329,8 @@ The submitted screenshot contained MAC addresses, IPv6 link-local addresses and 
 - [x] `SOC_DC-1`: Inspect `_msdcs.soc.home.lab` Name Servers tab — server `soc_dc01.soc.home.lab.` listed, GUI IP shown as `Unknown` (24 October screenshot)
 - [x] `SOC_DC-1`: `_msdcs.soc.home.lab` NS query returned `soc_dc01.soc.home.lab` with Additional A `10.10.10.10` (24 October screenshot)
 - [x] `SOC_DC-1`: Verify LDAP domain-controller locator SRV record (target `soc_dc01.soc.home.lab`, port 389, Additional A `10.10.10.10`; 24 October screenshot)
-- [ ] `SOC_DC-1`: Run read-only `dcdiag /test:dns /s:SOC_DC01`; investigate initial-synchronisation warning if current; prepare Active Directory-aware backup and rollback-safe registration/listener/A-record remediation
+- [x] `SOC_DC-1`: Attempt DNS client remediation via PowerShell; no visible errors, but repeated DNS query still returns NAT and internal DC A records (24 October screenshot)
+- [ ] `SOC_DC-1`: Confirm backup, remove only undesired NAT host A record, check NAT listener and apex records, verify results; resume remaining guest inventory
 - [ ] `W.10.Pro_Soc-Lab Client`: Verify guest IP, gateway and DNS
 - [ ] `Ubuntu Wazuh`: Verify guest IP, gateway and DNS
 - [ ] `Splunk-SIEM`: Verify guest IP, gateway and DNS
