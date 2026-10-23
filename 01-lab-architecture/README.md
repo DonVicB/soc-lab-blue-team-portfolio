@@ -149,7 +149,7 @@ The [live guest network inventory](guest-ip-dns.md) now records `SOC_DC-1` (Wind
 
 **Step 4.3 — VM-to-network wiring: COMPLETE (8 of 8 VMs documented).** Six screenshot pairs mapped to names by the owner (A–F); `Caldera-SOC`, `Linux Mint` and `Metasploitable3` also have directly identified Library summaries. Configuration review is **not** equivalent to proving guest network isolation. **Security follow-up:** restrict Metasploitable3's NAT exposure before future vulnerable-target sessions.
 
-**Step 4.4 — Guest IP and DNS: IN PROGRESS.** The 23 October `ipconfig /all` and `Get-DnsClientServerAddress` screenshots verify `SOC_DC01` IPs, gateways and DNS client servers (`Soc nw`: `0.0.0.0`; `Ethernet1`: `192.168.111.2`). See [guest IP and DNS](guest-ip-dns.md). **Next:** check the Windows DNS Server service status with `Get-Service -Name DNS` before considering DNS changes. Metasploitable3 NAT Adapter 2 was disabled at power-on and the save confirmed by the owner; live isolation remains untested.
+**Step 4.4 — Guest IP and DNS: IN PROGRESS.** The 23 October `ipconfig /all` and `Get-DnsClientServerAddress` screenshots verify `SOC_DC01` IPs, gateways and DNS client servers (`Soc nw`: `0.0.0.0`; `Ethernet1`: `192.168.111.2`). See [guest IP and DNS](guest-ip-dns.md). **DNS Server service reportedly Running** (23 October 2026, operator confirmation). **Next:** identify the actual AD domain using read-only `Get-ADDomain | Select-Object DNSRoot, NetBIOSName`, then inspect DNS zones and resolution before making changes. Metasploitable3 NAT Adapter 2 was disabled at power-on and the save confirmed by the owner; live isolation remains untested.
 
 **Step 4.5 — Final map:** Replace this draft with an evidence-based diagram and mark the revision as verified.
 
@@ -170,3 +170,4 @@ This repository is currently private, but private repositories can still be acci
 | 2026-10-23 | Directly verified Linux Mint (Host-only + NAT, 8 GB/127 GB) and Metasploitable3 (VMnet1 + VMnet8, 6.1 GB/39.1 GB) from selected Library views | All eight adapter assignments documented; vulnerable-target NAT configuration flagged; IPs and live reachability pending |
 | 2026-10-23 | Captured SOC_DC-1 guest `ipconfig /all`, corrected observed host/suffix, verified VMnet1/NAT addresses and flagged DNS configuration | Live screenshot values transcribed; DNS client settings and actual AD domain to verify |
 | 2026-10-23 | Confirmed Domain Controller DNS client servers from read-only PowerShell output | Internal `0.0.0.0`, NAT `192.168.111.2`; DNS service and resolution still untested |
+| 2026-10-23 | DNS Server service reported Running on SOC_DC01 | Operator-reported; AD domain, zones and actual resolution not yet verified |
