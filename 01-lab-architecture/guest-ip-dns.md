@@ -235,13 +235,33 @@ In DNS Manager, the operator selected **Forward Lookup Zones → _msdcs.soc.home
 
 **No changes made.** Do not edit the NS row or change other records based on the GUI display alone.
 
-**Next read-only test — query the authoritative server directly for the zone's NS records:**
+### _msdcs NS record resolution — screenshot verified 24 October 2026
+
+The operator ran this read-only query against the internal DNS server:
 
 ```powershell
 Resolve-DnsName -Name _msdcs.soc.home.lab -Type NS -Server 10.10.10.10
 ```
 
-Compare the returned name-server names with `soc_dc01.soc.home.lab` and investigate any query failures before deciding on remediation. DNS client NAT address registration, DNS Server listeners, and potentially stale A records are separate outstanding issues.
+| Response field | Value | DNS section |
+| --- | --- | --- |
+| Queried zone | `_msdcs.soc.home.lab` | Question |
+| NS target | `soc_dc01.soc.home.lab` | Answer |
+| NS TTL | 3600 seconds (1 hour) | Answer |
+| Additional A record for `soc_dc01.soc.home.lab` | `10.10.10.10` | Additional |
+| Additional record TTL | 3600 seconds (1 hour) | Additional |
+
+**Finding:** The DNS server **successfully returns the expected NS record** and an additional A record pointing to the DC's internal address `10.10.10.10`. This provides positive evidence that the earlier `Unknown` address in DNS Manager's Name Servers tab is **not evidence of a missing or unresolvable NS record** in this direct test. The GUI discrepancy remains unexplained but does not currently justify editing the NS entry.
+
+**Limits:** An NS response and a supporting Additional-section A record do not confirm the AD DC locator SRV records, workstation authentication, DNS client selection, or AD replication health. This query's Additional section lists the internal address; the earlier direct hostname A-record query independently returned **both** `10.10.10.10` and NAT `192.168.111.130`. **Do not infer that the NAT A-record problem has disappeared.**
+
+**Next read-only check — AD domain controller locator SRV record:**
+
+```powershell
+Resolve-DnsName -Name _ldap._tcp.dc._msdcs.soc.home.lab -Type SRV -Server 10.10.10.10
+```
+
+Confirm that the DNS server returns the expected domain-controller service target. This tests another crucial part of AD DNS without modifying settings. After validating the SRV record, prepare a safe backup/rollback and review registration on the NAT interface before deleting any existing A records.
 
 **Outstanding:** Test the `_msdcs.soc.home.lab` NS records directly, verify Windows 10 client live network and AD DNS, examine potentially stale `192.168.254.10`, and establish a backup/change/rollback plan before modifying registrations or listeners.
 
@@ -265,7 +285,8 @@ The submitted screenshot contained MAC addresses, IPv6 link-local addresses and 
 - [x] `SOC_DC-1`: DNS Server Interfaces tab shows `All IP addresses`, including NAT `192.168.111.130` (24 October screenshot)
 - [x] `SOC_DC-1`: `soc.home.lab` Name Servers tab lists `soc_dc01.soc.home.lab.` with `10.10.10.10` only (24 October screenshot)
 - [x] `SOC_DC-1`: Inspect `_msdcs.soc.home.lab` Name Servers tab — server `soc_dc01.soc.home.lab.` listed, GUI IP shown as `Unknown` (24 October screenshot)
-- [ ] `SOC_DC-1`: Query `_msdcs.soc.home.lab` NS records directly; investigate AD initial-synchronisation warning if current; prepare rollback-safe registration/listener/A-record remediation
+- [x] `SOC_DC-1`: `_msdcs.soc.home.lab` NS query returned `soc_dc01.soc.home.lab` with Additional A `10.10.10.10` (24 October screenshot)
+- [ ] `SOC_DC-1`: Check AD locator SRV records; investigate AD initial-synchronisation warning if current; prepare rollback-safe registration/listener/A-record remediation
 - [ ] `W.10.Pro_Soc-Lab Client`: Verify guest IP, gateway and DNS
 - [ ] `Ubuntu Wazuh`: Verify guest IP, gateway and DNS
 - [ ] `Splunk-SIEM`: Verify guest IP, gateway and DNS
