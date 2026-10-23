@@ -319,6 +319,22 @@ The DNS management cmdlet returned **Win32 9714 / `DNS_ERROR_NAME_DOES_NOT_EXIST
 
 **Focused manual remediation (pending):** In DNS Manager → Forward Lookup Zones → `soc.home.lab`, find the specific `soc_dc01` A record with address `192.168.111.130`. After a verified rollback/backup, delete **only that address-specific record**, preserving the `soc_dc01` A record `10.10.10.10` and all NS/SRV records. Confirm removal by re-querying `soc_dc01.soc.home.lab` against `10.10.10.10`. The zone-apex NAT and potentially stale addresses remain separately identified and require careful review. Prioritise returning to the GitHub VM inventory after this focused correction.
 
+### Deleted DNS Manager A records reported; old answer persists — 24 October 2026
+
+The lab owner reports manually deleting all visible `192.168.111.130` DNS records from DNS Manager. A subsequent screenshot of `Resolve-DnsName soc_dc01.soc.home.lab -Type A -Server 10.10.10.10` **still returns** `192.168.111.130` and `10.10.10.10`, both TTL 1200 seconds. The deletion is **operator-reported**; the DNS query is **screenshot-verified**.
+
+**Status:** Unresolved. The returned NAT address may reflect DNS cache/state or re-registration by another DC service. Do not claim the DNS issue is fixed or remove additional records indiscriminately.
+
+**Focused next check (not yet executed):**
+
+```powershell
+Clear-DnsServerCache -Force
+Clear-DnsClientCache
+Resolve-DnsName -Name soc_dc01.soc.home.lab -Type A -Server 10.10.10.10
+```
+
+These commands flush DNS Server and local client caches and then query the internal DNS server again; they do **not** delete authoritative zone records. If the NAT A record persists, inspect zone data/automatic registrations only when returning to the issue rather than delaying the GitHub lab documentation indefinitely. The DNS server's Interfaces tab was previously set to listen on all addresses, which can also contribute to address registration.
+
 ### Data handling
 
 The submitted screenshot contained MAC addresses, IPv6 link-local addresses and Windows guest UI information. To reduce unnecessary disclosure, these identifier values and the raw PDF were **not** committed; only the operationally relevant IPv4, DNS and adapter settings are transcribed.
