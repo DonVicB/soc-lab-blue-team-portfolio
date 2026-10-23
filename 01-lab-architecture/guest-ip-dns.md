@@ -137,13 +137,30 @@ A later screenshot of the selected `SOC_DC-1` VM includes `Get-DnsServerZone | S
 
 The same screenshot now directly displays the DNS service as **Running** and `Get-ADDomain` output `soc.home.lab` / `SOC`. These were previously operator-reported and are **now screenshot-verified**.
 
-**Next read-only command — correct property spelling:**
+### Corrected zone integration verification — 23 October 2026
+
+The operator supplied a subsequent PowerShell screenshot showing the corrected `IsDsIntegrated` property. These results are **screenshot-verified**:
+
+| ZoneName | ZoneType | IsDsIntegrated |
+| --- | --- | --- |
+| `_msdcs.soc.home.lab` | Primary | **True** |
+| `0.in-addr.arpa` | Primary | False |
+| `127.in-addr.arpa` | Primary | False |
+| `255.in-addr.arpa` | Primary | False |
+| `soc.home.lab` | Primary | **True** |
+| `TrustAnchors` | Primary | True |
+
+**Assessment:** Both `soc.home.lab` and `_msdcs.soc.home.lab` are verified as **Active Directory-integrated primary zones**. The three `in-addr.arpa` entries returning False does not by itself indicate a problem; they are special-purpose reverse lookup zones. `TrustAnchors` also reports True.
+
+**Limits:** These results show zone configuration, **not** AD replication health, availability of required SRV records, or successful DNS lookups. The earlier `isdsintergrated` typo and its blank values remain documented above as part of the diagnostic trail. No DNS configuration changes have been made.
+
+**Next read-only test — query the internal DNS server directly for its A records:**
 
 ```powershell
-Get-DnsServerZone | Select-Object ZoneName, ZoneType, IsDsIntegrated
+Resolve-DnsName -Name soc_dc01.soc.home.lab -Type A -Server 10.10.10.10
 ```
 
-Copy this command rather than retyping `IsDsIntegrated`. Once it displays `True` or `False` for the zones, record those values, then test queries directed to internal DNS `10.10.10.10`. Do not alter zones or DNS registration yet.
+This asks `10.10.10.10` to resolve the domain controller hostname, independently of the Windows DNS client adapter's configured resolver choice. Compare the returned records with the previously observed `10.10.10.10` and `192.168.111.130` before deciding whether any record-registration changes are required.
 
 ### Data handling
 
@@ -157,7 +174,8 @@ The submitted screenshot contained MAC addresses, IPv6 link-local addresses and 
 - [x] `SOC_DC-1`: Confirm AD domain as `soc.home.lab` and NetBIOS domain as `SOC` (`Get-ADDomain`; operator report, 23 October 2026)
 - [x] `SOC_DC-1`: Confirm expected DNS zone names visible in DNS Manager (23 October 2026)
 - [x] `SOC_DC-1`: Enumerate six zones as `Primary` (23 October PowerShell screenshot; AD integration column left blank by misspelled property)
-- [ ] `SOC_DC-1`: Verify `IsDsIntegrated` with corrected property, test DNS resolution and review possible stale/NAT A records and adapter DNS registration
+- [x] `SOC_DC-1`: Verify both AD zones as Primary / `IsDsIntegrated=True` (23 October PowerShell screenshot)
+- [ ] `SOC_DC-1`: Test DNS resolution directly against `10.10.10.10`; review possible stale/NAT A records and adapter DNS registration
 - [ ] `W.10.Pro_Soc-Lab Client`: Verify guest IP, gateway and DNS
 - [ ] `Ubuntu Wazuh`: Verify guest IP, gateway and DNS
 - [ ] `Splunk-SIEM`: Verify guest IP, gateway and DNS
