@@ -309,6 +309,16 @@ The commands are visible more than once in the terminal history. Their lack of e
 
 **Focused next action (not yet performed):** After confirming a valid backup/rollback, remove only the unwanted `soc_dc01` A record with `RecordData="192.168.111.130"`, using DNS Manager or `Remove-DnsServerResourceRecord -ZoneName "soc.home.lab" -Name "soc_dc01" -RRType A -RecordData "192.168.111.130"`. Independently review the zone-apex A records (`192.168.111.130`, `192.168.254.10`) and ensure a correct internal apex A record before changing those records. Re-query DNS and move back to verifying the other VMs; only revisit if unwanted records return.
 
+### Attempted removal of NAT A record — failed (24 October 2026)
+
+A PowerShell screenshot shows an attempt to remove the `soc_dc01` Host (A) record at `192.168.111.130` using `Remove-DnsServerResourceRecord -ZoneName "soc.home.lab" -Name "soc_dc01" -RRType A -RecordData "192.168.111.130"`.
+
+The DNS management cmdlet returned **Win32 9714 / `DNS_ERROR_NAME_DOES_NOT_EXIST`**, reporting failure to get the `soc_dc01` record in `soc.home.lab`. It **did not delete** the requested record. The subsequent direct DNS query still returned both `192.168.111.130` and `10.10.10.10` (1200-second TTLs).
+
+**Outcome:** NAT A record remains; no deletion success claimed. This error alone does not establish whether the queried A response was stale, whether the record is visible to the server-management interface, or why this particular cmdlet could not select it.
+
+**Focused manual remediation (pending):** In DNS Manager → Forward Lookup Zones → `soc.home.lab`, find the specific `soc_dc01` A record with address `192.168.111.130`. After a verified rollback/backup, delete **only that address-specific record**, preserving the `soc_dc01` A record `10.10.10.10` and all NS/SRV records. Confirm removal by re-querying `soc_dc01.soc.home.lab` against `10.10.10.10`. The zone-apex NAT and potentially stale addresses remain separately identified and require careful review. Prioritise returning to the GitHub VM inventory after this focused correction.
+
 ### Data handling
 
 The submitted screenshot contained MAC addresses, IPv6 link-local addresses and Windows guest UI information. To reduce unnecessary disclosure, these identifier values and the raw PDF were **not** committed; only the operationally relevant IPv4, DNS and adapter settings are transcribed.
@@ -330,7 +340,7 @@ The submitted screenshot contained MAC addresses, IPv6 link-local addresses and 
 - [x] `SOC_DC-1`: `_msdcs.soc.home.lab` NS query returned `soc_dc01.soc.home.lab` with Additional A `10.10.10.10` (24 October screenshot)
 - [x] `SOC_DC-1`: Verify LDAP domain-controller locator SRV record (target `soc_dc01.soc.home.lab`, port 389, Additional A `10.10.10.10`; 24 October screenshot)
 - [x] `SOC_DC-1`: Attempt DNS client remediation via PowerShell; no visible errors, but repeated DNS query still returns NAT and internal DC A records (24 October screenshot)
-- [ ] `SOC_DC-1`: Confirm backup, remove only undesired NAT host A record, check NAT listener and apex records, verify results; resume remaining guest inventory
+- [ ] `SOC_DC-1`: PowerShell NAT A-record deletion failed with Win32 9714 on 24 October; attempt precise GUI removal after backup, verify result and return to VM inventory
 - [ ] `W.10.Pro_Soc-Lab Client`: Verify guest IP, gateway and DNS
 - [ ] `Ubuntu Wazuh`: Verify guest IP, gateway and DNS
 - [ ] `Splunk-SIEM`: Verify guest IP, gateway and DNS
