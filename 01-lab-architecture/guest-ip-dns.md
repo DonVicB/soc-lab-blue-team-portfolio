@@ -78,22 +78,22 @@ The screenshot also shows an earlier failed command due to mistyping `Get-DnsCli
 
 ### DNS Server service status — operator confirmation (23 October 2026)
 
-The lab owner reports that `Get-Service -Name DNS` returned **Running** on `SOC_DC01`. This is **operator-reported**, not independently screenshot-verified. It confirms the Windows DNS Server service is running at the time of the check, **not** that the correct DNS zones exist, AD DNS registrations are healthy, or that DNS client resolution works.
+The lab owner reported that `Get-Service -Name DNS` returned **Running** on `SOC_DC01`; a later screenshot **independently confirms Running**. It confirms the Windows DNS Server service is running at the time of the check, **not** that the correct DNS zones exist, AD DNS registrations are healthy, or that DNS client resolution works.
 
 ### Active Directory domain — operator confirmation (23 October 2026)
 
-The lab owner ran:
+The lab owner ran the following command, with results later confirmed in a PowerShell screenshot:
 
 ```powershell
 Get-ADDomain | Select-Object DNSRoot, NetBIOSName
 ```
 
-and reported the following output:
+Its output:
 
 | Field | Value | Provenance |
 | --- | --- | --- |
-| `DNSRoot` | `soc.home.lab` | Operator-reported PowerShell output |
-| `NetBIOSName` | `SOC` | Operator-reported PowerShell output |
+| `DNSRoot` | `soc.home.lab` | Operator-reported, subsequently screenshot-verified |
+| `NetBIOSName` | `SOC` | Operator-reported, subsequently screenshot-verified |
 
 This confirms that the AD domain's DNS name matches the previously observed primary DNS suffix. It corrects the historical `lab.local` note. No Active Directory or DNS configuration was changed.
 
@@ -120,13 +120,30 @@ The selected `soc.home.lab` zone contains `_msdcs`, `_sites`, `_tcp`, `_udp`, `D
 
 **Evidence limits:** This screenshot shows records in the DNS Manager interface, not the `ZoneType` or `IsDsIntegrated` values. It also does not show successful or failed DNS queries. No changes were made to DNS.
 
-**Next read-only command — zone integration details:**
+### DNS zone enumeration — PowerShell screenshot (23 October 2026)
+
+A later screenshot of the selected `SOC_DC-1` VM includes `Get-DnsServerZone | Select-Object ...` output:
+
+| ZoneName | ZoneType | Active Directory integration |
+| --- | --- | --- |
+| `_msdcs.soc.home.lab` | Primary | **Not determined by this command output** |
+| `0.in-addr.arpa` | Primary | Not determined |
+| `127.in-addr.arpa` | Primary | Not determined |
+| `255.in-addr.arpa` | Primary | Not determined |
+| `soc.home.lab` | Primary | **Not determined by this command output** |
+| `TrustAnchors` | Primary | Not determined |
+
+**Reason the integration column is blank:** The screenshot shows the property spelled `isdsintergrated` (extra `r`), which is **not** the actual Windows DNS zone property `IsDsIntegrated`. PowerShell `Select-Object` emits an empty column for the unknown property. The missing values are **not** evidence of `False` or a failure of AD integration. The genuine `IsDsIntegrated` Boolean property indicates whether a DNS zone is AD-integrated.
+
+The same screenshot now directly displays the DNS service as **Running** and `Get-ADDomain` output `soc.home.lab` / `SOC`. These were previously operator-reported and are **now screenshot-verified**.
+
+**Next read-only command — correct property spelling:**
 
 ```powershell
 Get-DnsServerZone | Select-Object ZoneName, ZoneType, IsDsIntegrated
 ```
 
-Confirm the zone types and AD integration before testing queries directly against the internal DC DNS server (`10.10.10.10`).
+Copy this command rather than retyping `IsDsIntegrated`. Once it displays `True` or `False` for the zones, record those values, then test queries directed to internal DNS `10.10.10.10`. Do not alter zones or DNS registration yet.
 
 ### Data handling
 
@@ -139,7 +156,8 @@ The submitted screenshot contained MAC addresses, IPv6 link-local addresses and 
 - [x] `SOC_DC-1`: DNS Server service reported `Running` (operator confirmation, 23 October 2026)
 - [x] `SOC_DC-1`: Confirm AD domain as `soc.home.lab` and NetBIOS domain as `SOC` (`Get-ADDomain`; operator report, 23 October 2026)
 - [x] `SOC_DC-1`: Confirm expected DNS zone names visible in DNS Manager (23 October 2026)
-- [ ] `SOC_DC-1`: Verify zone integration/type, test DNS resolution, review possible stale/NAT A records and adapter DNS registration
+- [x] `SOC_DC-1`: Enumerate six zones as `Primary` (23 October PowerShell screenshot; AD integration column left blank by misspelled property)
+- [ ] `SOC_DC-1`: Verify `IsDsIntegrated` with corrected property, test DNS resolution and review possible stale/NAT A records and adapter DNS registration
 - [ ] `W.10.Pro_Soc-Lab Client`: Verify guest IP, gateway and DNS
 - [ ] `Ubuntu Wazuh`: Verify guest IP, gateway and DNS
 - [ ] `Splunk-SIEM`: Verify guest IP, gateway and DNS
