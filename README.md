@@ -82,7 +82,7 @@ Each case study should cover:
 
 - [x] Create a private GitHub repository.
 - [x] Add an initial portfolio README.
-- [ ] Add `.gitignore` and contributor-safe documentation rules.
+- [x] Add `.gitignore` to exclude secrets, VM disks, and raw SOC evidence.
 - [ ] Capture and sanitise current lab inventory.
 - [ ] Create a current-state network architecture diagram.
 - [ ] Document Windows Server / Active Directory and Windows 10.
