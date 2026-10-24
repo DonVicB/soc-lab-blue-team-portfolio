@@ -339,6 +339,43 @@ These commands flush DNS Server and local client caches and then query the inter
 
 The submitted screenshot contained MAC addresses, IPv6 link-local addresses and Windows guest UI information. To reduce unnecessary disclosure, these identifier values and the raw PDF were **not** committed; only the operationally relevant IPv4, DNS and adapter settings are transcribed.
 
+## W.10.Pro_Soc-Lab Client — Windows 10 guest IPv4 configuration
+
+> **Evidence:** VMware Workstation screenshot with `W.10.Pro_Soc-Lab Client` selected, displaying `ipconfig /all` in PowerShell on **24 October 2026, approximately 12:22 PM (Melbourne time)**. The visible console starts partway through the output, so the guest **hostname and domain membership are not independently shown**. An earlier lab note used hostname `DonW10`; do not mistake that historical hostname for a value verified in this screenshot.
+
+### Internal SOC interface — Windows `Ethernet1`
+
+| Property | Observed value |
+| --- | --- |
+| Network association | `VMnet1` host-only, inferred by matching the confirmed `10.10.10.0/24` subnet to VMware network settings |
+| IPv4 address | `10.10.10.11` (Preferred) |
+| Subnet mask | `255.255.255.0` (`/24`) |
+| DHCP enabled | **No** — static IPv4 |
+| Default gateway | **Blank / no gateway shown** |
+| DNS server | `10.10.10.10` (lab Domain Controller) |
+| NetBIOS over TCP/IP | Enabled |
+
+### NAT interface — Windows `Ethernet0`
+
+| Property | Observed value |
+| --- | --- |
+| Network association | `VMnet8` NAT, inferred by matching the confirmed `192.168.111.0/24` subnet to VMware network settings |
+| IPv4 address | `192.168.111.132` (Preferred) |
+| Subnet mask | `255.255.255.0` (`/24`) |
+| DHCP enabled | **Yes** |
+| Default gateway | `192.168.111.2` |
+| DHCP server | `192.168.111.254` |
+| DNS server | `192.168.111.2` |
+| Connection-specific DNS suffix | `localdomain` |
+| Primary WINS server | `192.168.111.2` |
+| NetBIOS over TCP/IP | Enabled |
+
+The visible `ipconfig /all` output reports **IP Routing Enabled: No**. Its visible DNS suffix search list contains `localdomain`. These observations do **not** verify domain join, successful authentication, or actual application connectivity.
+
+**Correction to earlier inventory:** The client's previously recorded internal address `10.10.10.15` is **outdated** relative to the live screenshot: its internal IPv4 address is now `10.10.10.11`. The DNS Manager screenshot previously showed a `DonW10` record at `10.10.10.50`; that is *also not* the IP shown on the running Windows 10 interface. This discrepancy is documented only, not treated as an invitation to divert the architecture inventory into DNS troubleshooting.
+
+**Scope:** This is a configuration transcription for the GitHub portfolio. No guest network changes were made and no raw screenshots, MAC addresses, or IPv6 host identifiers were committed.
+
 ## Remaining guest verification
 
 - [x] `SOC_DC-1`: Capture IP, gateway, DHCP and DNS values from `ipconfig /all` (23 October 2026)
@@ -357,7 +394,7 @@ The submitted screenshot contained MAC addresses, IPv6 link-local addresses and 
 - [x] `SOC_DC-1`: Verify LDAP domain-controller locator SRV record (target `soc_dc01.soc.home.lab`, port 389, Additional A `10.10.10.10`; 24 October screenshot)
 - [x] `SOC_DC-1`: Attempt DNS client remediation via PowerShell; no visible errors, but repeated DNS query still returns NAT and internal DC A records (24 October screenshot)
 - [ ] `SOC_DC-1`: PowerShell NAT A-record deletion failed with Win32 9714 on 24 October; attempt precise GUI removal after backup, verify result and return to VM inventory
-- [ ] `W.10.Pro_Soc-Lab Client`: Verify guest IP, gateway and DNS
+- [x] `W.10.Pro_Soc-Lab Client`: Verify guest internal IPv4 `10.10.10.11`/DNS `10.10.10.10` and NAT IPv4 `192.168.111.132`/gateway `192.168.111.2` from 24 October screenshot
 - [ ] `Ubuntu Wazuh`: Verify guest IP, gateway and DNS
 - [ ] `Splunk-SIEM`: Verify guest IP, gateway and DNS
 - [ ] `Caldera-SOC`: Verify guest IP, gateway and DNS
