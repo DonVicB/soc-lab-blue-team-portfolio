@@ -1,6 +1,6 @@
 # VMware SOC lab architecture
 
-> **Status: Eight of eight VMware VM network adapter configurations documented as of 23 October 2026.** Six profiles A–F mapped by the lab owner and two directly identified in VMware Library screenshots. **SOC_DC-1 and Windows 10 guest IP/gateway/DNS settings screenshot-verified; six guests remain.**  
+> **Status: Eight of eight VMware VM network adapter configurations documented as of 23 October 2026.** Six profiles A–F mapped by the lab owner and two directly identified in VMware Library screenshots. **Guest IPv4 addresses captured for 3 of 8 VMs (DC, Windows 10, Wazuh); Wazuh gateway/DNS and five other guest IP inventories remain pending.**  
 > **Evidence:** VMware Workstation Library and Virtual Network Editor screenshots supplied on **23 October 2026**. VM IPs and some connection assumptions below were recorded during the **16–18 October 2026** walkthrough. These older observations are not current guest configuration evidence.
 
 ## Purpose and scope
@@ -34,7 +34,7 @@ The screenshot confirms **eight VM display names** in the current VMware Worksta
 | `Linux Mint` | Wireshark / network monitoring | Not yet recorded | Adapter 1: Host-only mode; Adapter 2: NAT mode | **Named Library screenshot**; 8 GB RAM, 4 processors, 127 GB SCSI; powered off |
 | `Metasploitable3` | Deliberately vulnerable training target | Not yet recorded | Adapter 1: Custom VMnet1; Adapter 2: Custom VMnet8 | **Named Library screenshot**; 6.1 GB RAM, 4 processors, 39.1 GB SCSI; powered off |
 | `SOC_DC-1` | Windows Server 2019 / AD DS / DNS; Windows hostname `SOC_DC01` | `10.10.10.10` **verified 23 Oct** | Adapter 1: Custom VMnet1; Adapter 2: Custom VMnet8 | Owner mapping: Pair F; IPv4, NAT address `192.168.111.130`, gateway and DNS screenshot-verified |
-| `Ubuntu Wazuh` | Wazuh manager / dashboard | `10.10.10.20` | Adapter 1: Custom VMnet1; Adapter 2: NAT (automatic) | Owner mapping: Pair D; IP from prior notes |
+| `Ubuntu Wazuh` | Wazuh manager / dashboard; guest hostname `wazuh-server` | `10.10.10.20` **verified 24 Oct** | Adapter 1: Custom VMnet1; Adapter 2: NAT mode | Owner mapping: Pair D; `ens160 10.10.10.20/24`, `ens192 192.168.111.128/24`, both UP; routes/DNS pending |
 | `W.10.Pro_Soc-Lab Client` | Windows 10 client; guest hostname previously recorded as `DonW10` (not visible in this screenshot) | `10.10.10.11` **verified 24 Oct** | Adapter 1: Custom VMnet8; Adapter 2: Custom VMnet1 | Owner mapping: Pair C; internal `10.10.10.11`, NAT `192.168.111.132`, gateway/DNS screenshot-verified |
 | `Splunk-SIEM` | Splunk Enterprise | `10.10.10.69` | Adapter 1: Custom VMnet1; Adapter 2: Custom VMnet8 | Owner mapping: Pair B; IP from prior notes |
 | `Caldera-SOC` | MITRE CALDERA adversary emulation | `10.10.10.99` | **Adapter 1: Custom VMnet8; Adapter 2: Custom VMnet1** | Named Library screenshot and owner mapping: Pair A; IP from prior notes |
@@ -66,7 +66,7 @@ flowchart TB
 
     dc["SOC_DC-1 / SOC_DC01<br/>VMnet1: 10.10.10.10 (verified)<br/>NAT: 192.168.111.130 (verified)"]
     w10["W.10.Pro_Soc-Lab Client<br/>VMnet1 10.10.10.11 (verified)<br/>NAT 192.168.111.132 (verified)"]
-    wazuh["Ubuntu Wazuh<br/>10.10.10.20 (old)"]
+    wazuh["Ubuntu Wazuh / wazuh-server<br/>VMnet1 10.10.10.20 (verified)<br/>NAT 192.168.111.128 (verified)"]
     splunk["Splunk-SIEM<br/>10.10.10.69 (old)"]
     caldera["Caldera-SOC<br/>10.10.10.99 (old)"]
     kali["Kali Linux<br/>guest IP pending"]
@@ -121,6 +121,10 @@ The **screenshots verify the hardware values** but did not display VM names; the
 The selected `W.10.Pro_Soc-Lab Client` VMware VM's `ipconfig /all` screenshot verifies **Windows `Ethernet1`: `10.10.10.11/24`, static, no gateway, DNS `10.10.10.10`** (internal VMnet1) and **Windows `Ethernet0`: `192.168.111.132/24`, DHCP, gateway/DNS `192.168.111.2`** (NAT VMnet8). IP routing is disabled. This **supersedes the historical `10.10.10.15` address**. Guest hostname and AD membership are not directly displayed in this screenshot. See [guest IP and DNS evidence](guest-ip-dns.md).
 
 The owner separately reports resolving the earlier DC DNS issue through **Configure NIC teaming** settings. The exact changed settings and a successful post-fix lookup were not supplied, so resolution is **operator-reported**, not independently verified; no further DNS troubleshooting is part of this inventory step.
+
+## Ubuntu Wazuh guest IPv4 verification — 24 October 2026
+
+The `Ubuntu Wazuh` VM shows Linux hostname `wazuh-server` and Ubuntu **26.04.1 LTS** in the console. The screenshot of `ip -br -4 addr` confirms two UP interfaces: `ens160 10.10.10.20/24` (internal VMnet1 subnet) and `ens192 192.168.111.128/24` (NAT VMnet8 subnet). Route, gateway and DNS values are **not displayed** and remain to be collected. See [guest IP and DNS inventory](guest-ip-dns.md).
 
 ## Guest IP, gateway and DNS evidence — Step 4.4
 
@@ -190,3 +194,4 @@ This repository is currently private, but private repositories can still be acci
 | 2026-10-24 | NAT adapter registration and adapter DNS resolvers updated via PowerShell without visible error; A lookup still returns internal and NAT IPv4 addresses | Screenshot-confirmed attempts; unwanted DNS record not yet removed, changes not independently re-read |
 | 2026-10-24 | Targeted PowerShell deletion of `soc_dc01` NAT A record failed with Win32 9714; both A records remain in direct DNS response | No record deletion achieved; precise GUI removal and one verification pending |
 | 2026-10-24 | Captured Windows 10 guest internal `10.10.10.11/24`, NAT `192.168.111.132/24`, DNS and gateway | Screenshot-verified; supersedes older `10.10.10.15`; hostname/domain join not verified in this view |
+| 2026-10-24 | Captured Wazuh guest hostname `wazuh-server`, IPv4 `10.10.10.20/24` on `ens160` and `192.168.111.128/24` on `ens192` | Screenshot-verified `ip -br -4 addr`; gateway, DNS and DHCP unknown |
