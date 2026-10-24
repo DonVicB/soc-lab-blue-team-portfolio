@@ -399,16 +399,38 @@ The visible `ipconfig /all` output reports **IP Routing Enabled: No**. Its visib
 
 **Network association:** The address `10.10.10.20/24` matches the verified VMnet1 host-only `10.10.10.0/24` subnet, and `192.168.111.128/24` matches VMnet8 NAT `192.168.111.0/24`. This is consistent with the earlier VMware adapter record (Adapter 1 Custom VMnet1; Adapter 2 NAT mode). The guest interface-to-VMnet association has not been directly corroborated by MAC matching, but the subnet evidence is strong.
 
-**Scope and limitations:** `ip -br -4 addr` verifies interface states and currently assigned IPv4 addresses only. It does **not** reveal whether an address was obtained by DHCP, the default gateway, resolver addresses, firewall state, or whether Wazuh services are healthy. No network configuration was changed.
+**Initial screenshot scope:** `ip -br -4 addr` shows interface states and addresses but not gateways, DNS or service health. The follow-up screenshot below supplies routes and DNS settings.
 
-**Next collection commands (read-only):**
+### IPv4 routing and DNS — screenshot verified 24 October 2026
+
+A second `Ubuntu Wazuh` VMware screenshot at approximately 4:57 PM (Melbourne time) includes output of:
 
 ```bash
 ip -4 route
 resolvectl status
 ```
 
-The first lists IPv4 routes and default gateways; the second lists DNS resolver configuration (if `systemd-resolved` is in use). Document the outputs without turning the portfolio inventory into general troubleshooting.
+**IPv4 routes visible:**
+
+| Destination | Via / device | Source | Notes |
+| --- | --- | --- | --- |
+| `default` | `192.168.111.2` via `ens192` | `192.168.111.128` | DHCP, metric 100 |
+| `10.10.10.0/24` | directly connected via `ens160` | `10.10.10.20` | Internal lab network |
+| `192.168.111.0/24` | directly connected via `ens192` | `192.168.111.128` | NAT network, metric 100 |
+| `192.168.111.2` | via `ens192` (scope link) | `192.168.111.128` | DHCP-learned host route, metric 100 |
+
+**DNS resolver settings visible:**
+
+| Linux interface | DNS servers listed | Current DNS server | Other |
+| --- | --- | --- | --- |
+| `ens160` | `10.10.10.10`, `1.1.1.1` | `1.1.1.1` | DNS DefaultRoute: yes |
+| `ens192` | `192.168.111.2` | `192.168.111.2` | DNS DefaultRoute: yes |
+
+`resolvectl` reports **resolv.conf mode: stub**. Its per-link `DefaultRoute: yes` applies to **DNS resolution routing**, not a second IPv4 default gateway. The IPv4 route table contains one default route via VMnet8 `192.168.111.2`. The route output identifies the VMnet8 NAT address as DHCP-sourced; the internal address's configuration mechanism is not proved by this command alone.
+
+**Additional observation:** The screenshot also shows two `ping -c 4 10.10.10.11` attempts, each reporting 4 transmitted, 0 received and 100% packet loss. This is recorded as **ICMP echo non-response** from Wazuh to the Windows 10 internal address at capture time. ICMP non-response alone does **not** prove the endpoint is offline or that other traffic is blocked. This inventory step makes no troubleshooting changes.
+
+**Status:** Wazuh IPv4 address, gateway, route and DNS inventory complete. Actual DNS query success, Wazuh service health, and full network connectivity remain outside the current documentation check.
 
 ## Remaining guest verification
 
@@ -430,7 +452,7 @@ The first lists IPv4 routes and default gateways; the second lists DNS resolver 
 - [ ] `SOC_DC-1`: PowerShell NAT A-record deletion failed with Win32 9714 on 24 October; attempt precise GUI removal after backup, verify result and return to VM inventory
 - [x] `W.10.Pro_Soc-Lab Client`: Verify guest internal IPv4 `10.10.10.11`/DNS `10.10.10.10` and NAT IPv4 `192.168.111.132`/gateway `192.168.111.2` from 24 October screenshot
 - [x] `Ubuntu Wazuh`: Verify IPv4 `ens160=10.10.10.20/24` and `ens192=192.168.111.128/24`, both UP (24 October screenshot)
-- [ ] `Ubuntu Wazuh`: Capture gateway/routes and DNS; do not infer these from IP addresses alone
+- [x] `Ubuntu Wazuh`: Capture IPv4 default gateway `192.168.111.2` via `ens192` and DNS servers on `ens160`/`ens192` (24 October screenshot); ICMP to Windows 10 did not respond
 - [ ] `Splunk-SIEM`: Verify guest IP, gateway and DNS
 - [ ] `Caldera-SOC`: Verify guest IP, gateway and DNS
 - [ ] `Kali Linux`: Verify guest IP, gateway and DNS
