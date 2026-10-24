@@ -1,6 +1,6 @@
 # VMware SOC lab architecture
 
-> **Status: Eight of eight VMware VM network adapter configurations documented as of 23 October 2026.** Six profiles A–F mapped by the lab owner and two directly identified in VMware Library screenshots. **SOC_DC-1 guest IPv4 and gateway settings screenshot-verified; DNS client configuration needs investigation, and seven other guests remain to be checked.**  
+> **Status: Eight of eight VMware VM network adapter configurations documented as of 23 October 2026.** Six profiles A–F mapped by the lab owner and two directly identified in VMware Library screenshots. **SOC_DC-1 and Windows 10 guest IP/gateway/DNS settings screenshot-verified; six guests remain.**  
 > **Evidence:** VMware Workstation Library and Virtual Network Editor screenshots supplied on **23 October 2026**. VM IPs and some connection assumptions below were recorded during the **16–18 October 2026** walkthrough. These older observations are not current guest configuration evidence.
 
 ## Purpose and scope
@@ -20,7 +20,7 @@ The following VMware virtual network settings are **confirmed from the Virtual N
 
 **VMnet1 details:** Host virtual adapter enabled and labelled `VMware Network Adapter VMnet1`; the `Use local DHCP service to distribute IP address to VMs` option is unchecked. VMware displays `10.10.10.0` with `255.255.255.0` mask.
 
-**VMnet8 details:** Network type NAT, host connection Connected, DHCP Enabled and subnet address `192.168.111.0`. A second screenshot, with VMnet8 selected, confirms subnet mask `255.255.255.0` (`/24`), the enabled `VMware Network Adapter VMnet8` host adapter, and the enabled local DHCP service. The **NAT gateway address is not shown** and remains unverified.
+**VMnet8 details:** Network type NAT, host connection Connected, DHCP Enabled and subnet address `192.168.111.0`. A second screenshot, with VMnet8 selected, confirms subnet mask `255.255.255.0` (`/24`), the enabled `VMware Network Adapter VMnet8` host adapter, and the enabled local DHCP service. The **NAT gateway was not visible in the Virtual Network Editor**, but guest `ipconfig /all` screenshots subsequently show `192.168.111.2` as the NAT gateway for the DC and Windows 10 client.
 
 **Segmentation note:** Host-only means VMnet1 is not directly bridged to the physical LAN; the VMware host can still communicate over its virtual adapter. Any guest with both host-only and NAT NICs might bridge or route between networks if configured to do so. NAT is not a complete isolation control. Validate guest routes and firewall rules before adversary-emulation exercises.
 
@@ -28,14 +28,14 @@ The following VMware virtual network settings are **confirmed from the Virtual N
 
 The screenshot confirms **eight VM display names** in the current VMware Workstation Library. Names are transcribed as shown. Six adapter profiles were later associated with these display names by the lab owner (A–F mapping); their settings came from Hardware screenshots that did not themselves identify the VM. Linux Mint and Metasploitable3 adapter summaries were subsequently confirmed by separate named Library screenshots. These are **display names**, not necessarily each guest operating system's hostname.
 
-| VM display name — verified screenshot | Intended role / earlier lab history | Last recorded VMnet1 IP (unverified today) | Network adapter details | Evidence |
+| VM display name — verified screenshot | Intended role / earlier lab history | VMnet1 IPv4 (current where verified) | Network adapter details | Evidence |
 | --- | --- | --- | --- | --- |
 | `Kali Linux` | Authorised attack simulation | Not yet recorded | Adapter 1: Host-only; Adapter 2: NAT (automatic settings) | Owner mapping: Pair E |
 | `Linux Mint` | Wireshark / network monitoring | Not yet recorded | Adapter 1: Host-only mode; Adapter 2: NAT mode | **Named Library screenshot**; 8 GB RAM, 4 processors, 127 GB SCSI; powered off |
 | `Metasploitable3` | Deliberately vulnerable training target | Not yet recorded | Adapter 1: Custom VMnet1; Adapter 2: Custom VMnet8 | **Named Library screenshot**; 6.1 GB RAM, 4 processors, 39.1 GB SCSI; powered off |
 | `SOC_DC-1` | Windows Server 2019 / AD DS / DNS; Windows hostname `SOC_DC01` | `10.10.10.10` **verified 23 Oct** | Adapter 1: Custom VMnet1; Adapter 2: Custom VMnet8 | Owner mapping: Pair F; IPv4, NAT address `192.168.111.130`, gateway and DNS screenshot-verified |
 | `Ubuntu Wazuh` | Wazuh manager / dashboard | `10.10.10.20` | Adapter 1: Custom VMnet1; Adapter 2: NAT (automatic) | Owner mapping: Pair D; IP from prior notes |
-| `W.10.Pro_Soc-Lab Client` | Windows 10 domain client; guest hostname previously recorded as `DonW10` | `10.10.10.15` | Adapter 1: Custom VMnet8; Adapter 2: Custom VMnet1 | Owner mapping: Pair C; hostname/IP from prior notes |
+| `W.10.Pro_Soc-Lab Client` | Windows 10 client; guest hostname previously recorded as `DonW10` (not visible in this screenshot) | `10.10.10.11` **verified 24 Oct** | Adapter 1: Custom VMnet8; Adapter 2: Custom VMnet1 | Owner mapping: Pair C; internal `10.10.10.11`, NAT `192.168.111.132`, gateway/DNS screenshot-verified |
 | `Splunk-SIEM` | Splunk Enterprise | `10.10.10.69` | Adapter 1: Custom VMnet1; Adapter 2: Custom VMnet8 | Owner mapping: Pair B; IP from prior notes |
 | `Caldera-SOC` | MITRE CALDERA adversary emulation | `10.10.10.99` | **Adapter 1: Custom VMnet8; Adapter 2: Custom VMnet1** | Named Library screenshot and owner mapping: Pair A; IP from prior notes |
 
@@ -65,7 +65,7 @@ flowchart TB
     vmnet8["VMnet8<br/>NAT 192.168.111.0/24<br/>DHCP on"]
 
     dc["SOC_DC-1 / SOC_DC01<br/>VMnet1: 10.10.10.10 (verified)<br/>NAT: 192.168.111.130 (verified)"]
-    w10["W.10.Pro_Soc-Lab Client<br/>10.10.10.15 (old)"]
+    w10["W.10.Pro_Soc-Lab Client<br/>VMnet1 10.10.10.11 (verified)<br/>NAT 192.168.111.132 (verified)"]
     wazuh["Ubuntu Wazuh<br/>10.10.10.20 (old)"]
     splunk["Splunk-SIEM<br/>10.10.10.69 (old)"]
     caldera["Caldera-SOC<br/>10.10.10.99 (old)"]
@@ -116,6 +116,12 @@ The **screenshots verify the hardware values** but did not display VM names; the
 
 **Security observation:** Metasploitable3 is intentionally vulnerable and configured with NAT access through VMnet8. This is a configuration concern, not evidence of actual reachability. For routine isolated attack tests, review disconnecting the NAT adapter before booting. The Domain Controller and other dual-homed systems also require guest routing, DNS registration and firewall checks before the lab can be declared securely segmented.
 
+## Windows 10 guest IPv4 verification — 24 October 2026
+
+The selected `W.10.Pro_Soc-Lab Client` VMware VM's `ipconfig /all` screenshot verifies **Windows `Ethernet1`: `10.10.10.11/24`, static, no gateway, DNS `10.10.10.10`** (internal VMnet1) and **Windows `Ethernet0`: `192.168.111.132/24`, DHCP, gateway/DNS `192.168.111.2`** (NAT VMnet8). IP routing is disabled. This **supersedes the historical `10.10.10.15` address**. Guest hostname and AD membership are not directly displayed in this screenshot. See [guest IP and DNS evidence](guest-ip-dns.md).
+
+The owner separately reports resolving the earlier DC DNS issue through **Configure NIC teaming** settings. The exact changed settings and a successful post-fix lookup were not supplied, so resolution is **operator-reported**, not independently verified; no further DNS troubleshooting is part of this inventory step.
+
 ## Guest IP, gateway and DNS evidence — Step 4.4
 
 The [live guest network inventory](guest-ip-dns.md) now records `SOC_DC-1` (Windows hostname `SOC_DC01`) with internal `10.10.10.10/24` (static), no gateway on the internal adapter, and NAT `192.168.111.130/24` (DHCP) with gateway `192.168.111.2`. **DNS client needs follow-up:** the internal NIC reports `0.0.0.0` and the NAT NIC reports `192.168.111.2`. The AD-integrated DNS zones are verified, and a 23 October read-only DNS query against `10.10.10.10` returns **both** `10.10.10.10` and NAT `192.168.111.130` (TTL 1200 each) for `SOC_DC01.soc.home.lab`. The NAT registration and its effect on clients require review. Windows reports `IP Routing Enabled: No`. The screenshot reports primary DNS suffix `soc.home.lab`; the lab owner separately confirmed Active Directory DNSRoot `soc.home.lab` and NetBIOSName `SOC` with `Get-ADDomain`.
@@ -145,7 +151,7 @@ The [live guest network inventory](guest-ip-dns.md) now records `SOC_DC-1` (Wind
 
 **Step 4.1 — Current VM inventory: COMPLETE (display names).** A VMware Workstation Library screenshot supplied 23 October 2026 identifies eight VMs. CALDERA's memory, CPU count, disk capacity, power state and two virtual networks were also visible.
 
-**Step 4.2 — VMware virtual networks: COMPLETE.** Both Virtual Network Editor screenshots confirm VMnet1 Host-only (`10.10.10.0/24`, DHCP disabled) and VMnet8 NAT (`192.168.111.0/24`, DHCP enabled), with connected host adapters. NAT gateway address remains unverified and will be checked during Step 4.4.
+**Step 4.2 — VMware virtual networks: COMPLETE.** Virtual Network Editor screenshots confirm VMnet1 Host-only (`10.10.10.0/24`, DHCP disabled) and VMnet8 NAT (`192.168.111.0/24`, DHCP enabled); 24 October guest screenshots verify NAT gateway `192.168.111.2` on Windows 10 and earlier DC guest output also shows this gateway.
 
 **Step 4.3 — VM-to-network wiring: COMPLETE (8 of 8 VMs documented).** Six screenshot pairs mapped to names by the owner (A–F); `Caldera-SOC`, `Linux Mint` and `Metasploitable3` also have directly identified Library summaries. Configuration review is **not** equivalent to proving guest network isolation. **Security follow-up:** restrict Metasploitable3's NAT exposure before future vulnerable-target sessions.
 
@@ -183,3 +189,4 @@ This repository is currently private, but private repositories can still be acci
 | 2026-10-24 | Read-only AD LDAP locator SRV query returned target `soc_dc01.soc.home.lab` on TCP 389, Additional A `10.10.10.10` | Screenshot-verified DNS service discovery; NAT A records and DC health checks remain pending |
 | 2026-10-24 | NAT adapter registration and adapter DNS resolvers updated via PowerShell without visible error; A lookup still returns internal and NAT IPv4 addresses | Screenshot-confirmed attempts; unwanted DNS record not yet removed, changes not independently re-read |
 | 2026-10-24 | Targeted PowerShell deletion of `soc_dc01` NAT A record failed with Win32 9714; both A records remain in direct DNS response | No record deletion achieved; precise GUI removal and one verification pending |
+| 2026-10-24 | Captured Windows 10 guest internal `10.10.10.11/24`, NAT `192.168.111.132/24`, DNS and gateway | Screenshot-verified; supersedes older `10.10.10.15`; hostname/domain join not verified in this view |
