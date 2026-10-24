@@ -323,7 +323,7 @@ The DNS management cmdlet returned **Win32 9714 / `DNS_ERROR_NAME_DOES_NOT_EXIST
 
 The lab owner reports manually deleting all visible `192.168.111.130` DNS records from DNS Manager. A subsequent screenshot of `Resolve-DnsName soc_dc01.soc.home.lab -Type A -Server 10.10.10.10` **still returns** `192.168.111.130` and `10.10.10.10`, both TTL 1200 seconds. The deletion is **operator-reported**; the DNS query is **screenshot-verified**.
 
-**Status:** Unresolved. The returned NAT address may reflect DNS cache/state or re-registration by another DC service. Do not claim the DNS issue is fixed or remove additional records indiscriminately.
+**Status at the time of this screenshot:** Unresolved. The returned NAT address may reflect DNS cache/state or re-registration by another DC service. A **later owner report** states the issue was fixed using Configure NIC teaming settings, but the exact change and post-fix DNS query were not supplied (see resolution note below).
 
 **Focused next check (not yet executed):**
 
@@ -338,6 +338,12 @@ These commands flush DNS Server and local client caches and then query the inter
 ### Data handling
 
 The submitted screenshot contained MAC addresses, IPv6 link-local addresses and Windows guest UI information. To reduce unnecessary disclosure, these identifier values and the raw PDF were **not** committed; only the operationally relevant IPv4, DNS and adapter settings are transcribed.
+
+### Domain Controller DNS troubleshooting disposition — owner report (24 October 2026)
+
+The lab owner stated that they **fixed the DNS problem through “Configure NIC teaming” settings**. This is recorded as **operator-reported resolved** to preserve the outcome of their troubleshooting. No exact team settings, after-state DNS command output, or before/after NIC configuration was supplied, so the actual mechanism and record-level resolution remain **unverified by screenshot**. Prior diagnostic results above accurately describe the state when those tests were captured.
+
+**Scope decision:** Stop the detailed DC DNS investigation and resume documenting the other VMware guests for the GitHub SOC lab portfolio. Do not assume NIC teaming exists on other machines or repeat this fix without verifying their topology.
 
 ## W.10.Pro_Soc-Lab Client — Windows 10 guest IPv4 configuration
 
