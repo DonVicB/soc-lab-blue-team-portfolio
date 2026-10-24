@@ -382,6 +382,34 @@ The visible `ipconfig /all` output reports **IP Routing Enabled: No**. Its visib
 
 **Scope:** This is a configuration transcription for the GitHub portfolio. No guest network changes were made and no raw screenshots, MAC addresses, or IPv6 host identifiers were committed.
 
+## Ubuntu Wazuh — IPv4 interface inventory
+
+> **Evidence:** VMware Workstation `Ubuntu Wazuh` selected, showing Linux console output of `ip -br -4 addr` on **24 October 2026 (approximately 4:52 PM, Melbourne time)**. No raw screenshot is stored in the repository.
+
+### Guest identity and IPv4 addresses
+
+| Field | Screenshot result |
+| --- | --- |
+| VMware display name | `Ubuntu Wazuh` |
+| Linux hostname (terminal prompt / login banner) | `wazuh-server` |
+| Operating system banner | Ubuntu 26.04.1 LTS (as displayed) |
+| Interface `lo` | `127.0.0.1/8` — state `UNKNOWN` (loopback) |
+| Interface `ens160` | `10.10.10.20/24` — state `UP` |
+| Interface `ens192` | `192.168.111.128/24` — state `UP` (output also shows `metric 100`) |
+
+**Network association:** The address `10.10.10.20/24` matches the verified VMnet1 host-only `10.10.10.0/24` subnet, and `192.168.111.128/24` matches VMnet8 NAT `192.168.111.0/24`. This is consistent with the earlier VMware adapter record (Adapter 1 Custom VMnet1; Adapter 2 NAT mode). The guest interface-to-VMnet association has not been directly corroborated by MAC matching, but the subnet evidence is strong.
+
+**Scope and limitations:** `ip -br -4 addr` verifies interface states and currently assigned IPv4 addresses only. It does **not** reveal whether an address was obtained by DHCP, the default gateway, resolver addresses, firewall state, or whether Wazuh services are healthy. No network configuration was changed.
+
+**Next collection commands (read-only):**
+
+```bash
+ip -4 route
+resolvectl status
+```
+
+The first lists IPv4 routes and default gateways; the second lists DNS resolver configuration (if `systemd-resolved` is in use). Document the outputs without turning the portfolio inventory into general troubleshooting.
+
 ## Remaining guest verification
 
 - [x] `SOC_DC-1`: Capture IP, gateway, DHCP and DNS values from `ipconfig /all` (23 October 2026)
@@ -401,7 +429,8 @@ The visible `ipconfig /all` output reports **IP Routing Enabled: No**. Its visib
 - [x] `SOC_DC-1`: Attempt DNS client remediation via PowerShell; no visible errors, but repeated DNS query still returns NAT and internal DC A records (24 October screenshot)
 - [ ] `SOC_DC-1`: PowerShell NAT A-record deletion failed with Win32 9714 on 24 October; attempt precise GUI removal after backup, verify result and return to VM inventory
 - [x] `W.10.Pro_Soc-Lab Client`: Verify guest internal IPv4 `10.10.10.11`/DNS `10.10.10.10` and NAT IPv4 `192.168.111.132`/gateway `192.168.111.2` from 24 October screenshot
-- [ ] `Ubuntu Wazuh`: Verify guest IP, gateway and DNS
+- [x] `Ubuntu Wazuh`: Verify IPv4 `ens160=10.10.10.20/24` and `ens192=192.168.111.128/24`, both UP (24 October screenshot)
+- [ ] `Ubuntu Wazuh`: Capture gateway/routes and DNS; do not infer these from IP addresses alone
 - [ ] `Splunk-SIEM`: Verify guest IP, gateway and DNS
 - [ ] `Caldera-SOC`: Verify guest IP, gateway and DNS
 - [ ] `Kali Linux`: Verify guest IP, gateway and DNS
