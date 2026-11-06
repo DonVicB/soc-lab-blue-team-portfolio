@@ -1,6 +1,6 @@
 # VMware SOC lab architecture
 
-> **Status: Eight of eight VMware VM network adapter configurations documented as of 23 October 2026.** Six profiles A–F mapped by the lab owner and two directly identified in VMware Library screenshots. **Guest IPv4 addresses, routes and DNS documented for 4 of 8 VMs (DC, Windows 10, Wazuh and Splunk); four guest IP inventories remain pending.**  
+> **Status: Eight of eight VMware VM network adapter configurations documented as of 23 October 2026.** Six profiles A–F mapped by the lab owner and two directly identified in VMware Library screenshots. **Guest IPv4 addresses, routes and DNS documented for 5 of 8 VMs (DC, Windows 10, Wazuh, Splunk and CALDERA); three guest IP inventories remain pending.**  
 > **Evidence:** VMware Workstation Library and Virtual Network Editor screenshots supplied on **23 October 2026**. VM IPs and some connection assumptions below were recorded during the **16–18 October 2026** walkthrough. These older observations are not current guest configuration evidence.
 
 ## Purpose and scope
@@ -37,7 +37,7 @@ The screenshot confirms **eight VM display names** in the current VMware Worksta
 | `Ubuntu Wazuh` | Wazuh manager / dashboard; guest hostname `wazuh-server` | `10.10.10.20` **verified 24 Oct** | Adapter 1: Custom VMnet1; Adapter 2: NAT mode | Owner mapping: Pair D; `ens160 10.10.10.20/24`, `ens192 192.168.111.128/24`; gateway `192.168.111.2`; resolver settings verified |
 | `W.10.Pro_Soc-Lab Client` | Windows 10 client; guest hostname previously recorded as `DonW10` (not visible in this screenshot) | `10.10.10.11` **verified 24 Oct** | Adapter 1: Custom VMnet8; Adapter 2: Custom VMnet1 | Owner mapping: Pair C; internal `10.10.10.11`, NAT `192.168.111.132`, gateway/DNS screenshot-verified |
 | `Splunk-SIEM` | Splunk Enterprise; Linux hostname `splunk-siem` | `10.10.10.69` **verified 6 Nov** | Adapter 1: Custom VMnet1; Adapter 2: Custom VMnet8 | Owner mapping: Pair B; `ens33 10.10.10.69/24`, `ens34 192.168.111.135/24`, NAT gateway/DNS `192.168.111.2` |
-| `Caldera-SOC` | MITRE CALDERA adversary emulation | `10.10.10.99` | **Adapter 1: Custom VMnet8; Adapter 2: Custom VMnet1** | Named Library screenshot and owner mapping: Pair A; IP from prior notes |
+| `Caldera-SOC` | MITRE CALDERA adversary emulation; guest hostname `caldera-soc` | `10.10.10.99` **verified 6 Nov** | **Adapter 1: Custom VMnet8; Adapter 2: Custom VMnet1** | Named Library screenshot and owner mapping: Pair A; `ens33 192.168.111.137/24`, `ens34 10.10.10.99/24`; NAT gateway/DNS `192.168.111.2` |
 
 ### Screenshot-verified CALDERA VM details
 
@@ -68,7 +68,7 @@ flowchart TB
     w10["W.10.Pro_Soc-Lab Client<br/>VMnet1 10.10.10.11 (verified)<br/>NAT 192.168.111.132 (verified)"]
     wazuh["Ubuntu Wazuh / wazuh-server<br/>VMnet1 10.10.10.20 (verified)<br/>NAT 192.168.111.128 (verified)"]
     splunk["Splunk-SIEM / splunk-siem<br/>VMnet1 10.10.10.69 (verified)<br/>NAT 192.168.111.135 (verified)"]
-    caldera["Caldera-SOC<br/>10.10.10.99 (old)"]
+    caldera["Caldera-SOC / caldera-soc<br/>VMnet1 10.10.10.99 (verified)<br/>NAT 192.168.111.137 (verified)"]
     kali["Kali Linux<br/>guest IP pending"]
     mint["Linux Mint<br/>guest IP pending"]
     target["Metasploitable3<br/>guest IP pending"]
@@ -129,6 +129,10 @@ The `Ubuntu Wazuh` VM shows Linux hostname `wazuh-server` and Ubuntu **26.04.1 L
 ## Splunk-SIEM guest networking verification — 6 November 2026
 
 The VMware `Splunk-SIEM` screenshot shows Linux hostname `splunk-siem`, internal `ens33 10.10.10.69/24` and NAT `ens34 192.168.111.135/24`, both UP. The `ip -4 route` output has one default IPv4 route via `192.168.111.2` on `ens34` (DHCP, metric 100). `resolvectl status` shows `ens33` with no DNS scopes/servers and `ens34` with `192.168.111.2` as its current/listed DNS server. `resolv.conf` mode is stub. These values confirm the earlier recorded internal address and replace the historically unverified NAT address. No network changes or service-health checks performed. See [guest IP and DNS evidence](guest-ip-dns.md).
+
+## Caldera-SOC guest networking verification — 6 November 2026
+
+The `Caldera-SOC` VM's terminal shows guest hostname `caldera-soc`; `ens34 10.10.10.99/24` is the internal network interface and `ens33 192.168.111.137/24` is the NAT interface, both UP. The IPv4 default route is `192.168.111.2` via NAT `ens33`, DHCP protocol, metric 100. `resolvectl` reports stub mode; `ens33` uses `192.168.111.2` for DNS and `ens34` has no DNS servers listed. This confirms the earlier internal IP observation. These are guest network settings, not proof of CALDERA application availability or simulated-attack activity. See [guest IP and DNS evidence](guest-ip-dns.md).
 
 ## Guest IP, gateway and DNS evidence — Step 4.4
 
@@ -201,3 +205,4 @@ This repository is currently private, but private repositories can still be acci
 | 2026-10-24 | Captured Wazuh guest hostname `wazuh-server`, IPv4 `10.10.10.20/24` on `ens160` and `192.168.111.128/24` on `ens192` | Screenshot-verified `ip -br -4 addr`; gateway, DNS and DHCP unknown |
 | 2026-10-24 | Wazuh routing and DNS confirmed: default via `192.168.111.2` on `ens192`, per-link resolver servers listed | Screenshot-verified; two ICMP tests to Windows 10 `10.10.10.11` got no response; no troubleshooting changes |
 | 2026-11-06 | Splunk-SIEM VM verified: `ens33 10.10.10.69/24`, `ens34 192.168.111.135/24`, default gateway and DNS `192.168.111.2` | Screenshot-verified address/route/resolver baseline; Splunk service health not part of this step |
+| 2026-11-06 | Caldera-SOC guest verified: `ens34 10.10.10.99/24`, `ens33 192.168.111.137/24`, default gateway and DNS `192.168.111.2` on NAT | Screenshot-backed; no guest settings changed, CALDERA service status not checked |
