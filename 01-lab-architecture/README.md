@@ -1,6 +1,6 @@
 # VMware SOC lab architecture
 
-> **Status: Eight of eight VMware VM network adapter configurations documented as of 23 October 2026.** Six profiles A–F mapped by the lab owner and two directly identified in VMware Library screenshots. **Guest IPv4 addresses, routes and DNS documented for 5 of 8 VMs (DC, Windows 10, Wazuh, Splunk and CALDERA); three guest IP inventories remain pending.**  
+> **Status: Eight of eight VMware VM network adapter configurations documented as of 23 October 2026.** Six profiles A–F mapped by the lab owner and two directly identified in VMware Library screenshots. **Guest IPv4, routing and available DNS observations documented for 6 of 8 VMs (DC, Windows 10, Wazuh, Splunk, CALDERA and Kali); Linux Mint and Metasploitable3 remain.**  
 > **Evidence:** VMware Workstation Library and Virtual Network Editor screenshots supplied on **23 October 2026**. VM IPs and some connection assumptions below were recorded during the **16–18 October 2026** walkthrough. These older observations are not current guest configuration evidence.
 
 ## Purpose and scope
@@ -30,7 +30,7 @@ The screenshot confirms **eight VM display names** in the current VMware Worksta
 
 | VM display name — verified screenshot | Intended role / earlier lab history | VMnet1 IPv4 (current where verified) | Network adapter details | Evidence |
 | --- | --- | --- | --- | --- |
-| `Kali Linux` | Authorised attack simulation | Not yet recorded | Adapter 1: Host-only; Adapter 2: NAT (automatic settings) | Owner mapping: Pair E |
+| `Kali Linux` | Authorised attack simulation; guest hostname `kali-soc` | `10.10.10.30` **verified 6 Nov** | Adapter 1: Host-only; Adapter 2: NAT (automatic settings) | Owner mapping: Pair E; `eth0 10.10.10.30/24`, `eth1 192.168.111.129/24`, default gateway `192.168.111.2`, Docker bridge `172.17.0.1/16`; DNS not listed |
 | `Linux Mint` | Wireshark / network monitoring | Not yet recorded | Adapter 1: Host-only mode; Adapter 2: NAT mode | **Named Library screenshot**; 8 GB RAM, 4 processors, 127 GB SCSI; powered off |
 | `Metasploitable3` | Deliberately vulnerable training target | Not yet recorded | Adapter 1: Custom VMnet1; Adapter 2: Custom VMnet8 | **Named Library screenshot**; 6.1 GB RAM, 4 processors, 39.1 GB SCSI; powered off |
 | `SOC_DC-1` | Windows Server 2019 / AD DS / DNS; Windows hostname `SOC_DC01` | `10.10.10.10` **verified 23 Oct** | Adapter 1: Custom VMnet1; Adapter 2: Custom VMnet8 | Owner mapping: Pair F; IPv4, NAT address `192.168.111.130`, gateway and DNS screenshot-verified |
@@ -69,9 +69,12 @@ flowchart TB
     wazuh["Ubuntu Wazuh / wazuh-server<br/>VMnet1 10.10.10.20 (verified)<br/>NAT 192.168.111.128 (verified)"]
     splunk["Splunk-SIEM / splunk-siem<br/>VMnet1 10.10.10.69 (verified)<br/>NAT 192.168.111.135 (verified)"]
     caldera["Caldera-SOC / caldera-soc<br/>VMnet1 10.10.10.99 (verified)<br/>NAT 192.168.111.137 (verified)"]
-    kali["Kali Linux<br/>guest IP pending"]
+    kali["Kali Linux / kali-soc<br/>VMnet1 10.10.10.30 (verified)<br/>NAT 192.168.111.129 (verified)"]
     mint["Linux Mint<br/>guest IP pending"]
     target["Metasploitable3<br/>guest IP pending"]
+
+    dockerbridge["Kali docker0 bridge<br/>172.17.0.0/16 (guest-local)"]
+    kali ---|"Docker bridge inside guest"| dockerbridge
 
     host --- vmnet1
     host --- vmnet8
@@ -133,6 +136,12 @@ The VMware `Splunk-SIEM` screenshot shows Linux hostname `splunk-siem`, internal
 ## Caldera-SOC guest networking verification — 6 November 2026
 
 The `Caldera-SOC` VM's terminal shows guest hostname `caldera-soc`; `ens34 10.10.10.99/24` is the internal network interface and `ens33 192.168.111.137/24` is the NAT interface, both UP. The IPv4 default route is `192.168.111.2` via NAT `ens33`, DHCP protocol, metric 100. `resolvectl` reports stub mode; `ens33` uses `192.168.111.2` for DNS and `ens34` has no DNS servers listed. This confirms the earlier internal IP observation. These are guest network settings, not proof of CALDERA application availability or simulated-attack activity. See [guest IP and DNS evidence](guest-ip-dns.md).
+
+## Kali Linux guest networking verification — 6 November 2026
+
+The selected `Kali Linux` VM shows guest hostname `kali-soc`; `eth0` is UP with `10.10.10.30/24` on the internal VMnet1 subnet, and `eth1` is UP with `192.168.111.129/24` on NAT VMnet8. Kernel IPv4 default route: `192.168.111.2` via `eth1`, metric 101. A local Docker bridge, `docker0`, is UP at `172.17.0.1/16` and has its own `172.17.0.0/16` connected route; it is **not a separate VMware VMnet**.
+
+The `resolvectl status` screenshot reports stub mode, but **no DNS server IPs are listed** on displayed interfaces. APT also showed `http.kali.org` temporary name-resolution failures during a package-install attempt. These are documentation observations, not proof of network isolation or the cause of the DNS failure. No remediation is being performed as part of this portfolio collection. See [guest IP and DNS evidence](guest-ip-dns.md).
 
 ## Guest IP, gateway and DNS evidence — Step 4.4
 
@@ -206,3 +215,4 @@ This repository is currently private, but private repositories can still be acci
 | 2026-10-24 | Wazuh routing and DNS confirmed: default via `192.168.111.2` on `ens192`, per-link resolver servers listed | Screenshot-verified; two ICMP tests to Windows 10 `10.10.10.11` got no response; no troubleshooting changes |
 | 2026-11-06 | Splunk-SIEM VM verified: `ens33 10.10.10.69/24`, `ens34 192.168.111.135/24`, default gateway and DNS `192.168.111.2` | Screenshot-verified address/route/resolver baseline; Splunk service health not part of this step |
 | 2026-11-06 | Caldera-SOC guest verified: `ens34 10.10.10.99/24`, `ens33 192.168.111.137/24`, default gateway and DNS `192.168.111.2` on NAT | Screenshot-backed; no guest settings changed, CALDERA service status not checked |
+| 2026-11-06 | Kali guest IPv4 `10.10.10.30/24`, NAT `192.168.111.129/24`, gateway `192.168.111.2`; Docker bridge `172.17.0.1/16` | Screenshot verified; DNS resolver server addresses not listed and APT name-resolution errors observed |
