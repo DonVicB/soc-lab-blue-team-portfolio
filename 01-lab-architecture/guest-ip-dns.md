@@ -512,6 +512,40 @@ There is one IPv4 default gateway: `192.168.111.2` on NAT `ens33`. The NAT route
 
 **Status:** IPv4 addresses, routes, default gateway and DNS inventoried. No configuration changes made.
 
+## Kali Linux — IPv4, routing and DNS observations
+
+> **Evidence:** Two user-supplied VMware Workstation screenshots with `Kali Linux` selected, dated **6 November 2026 at approximately 18:21 AEDT**. They show terminal commands `ip -br -4 addr`, `ip -4 route` and later `resolvectl status`. Screenshot evidence is transcribed; no raw screenshots, MAC addresses or local account identifiers were committed.
+
+### IPv4 interface inventory
+
+| Interface | State | IPv4 address | Role / evidence |
+| --- | --- | --- | --- |
+| `lo` | UNKNOWN | `127.0.0.1/8` | Loopback |
+| `eth0` | UP | `10.10.10.30/24` | Internal SOC network (VMnet1 subnet) |
+| `eth1` | UP | `192.168.111.129/24` | NAT network (VMnet8 subnet) |
+| `docker0` | UP | `172.17.0.1/16` | Local Docker bridge; **not** a third VMware network |
+
+The guest hostname displayed in the terminal prompt is `kali-soc`. Interface-to-VMware association is consistent with prior owner-mapped VMware settings (Adapter 1 Host-only; Adapter 2 NAT); no guest MAC-to-VMware adapter match was performed.
+
+### IPv4 routing table
+
+| Destination | Via / interface | Source / metric |
+| --- | --- | --- |
+| `default` | `192.168.111.2` via `eth1` | DHCP; src `192.168.111.129`; metric 101 |
+| `10.10.10.0/24` | Direct on `eth0` | src `10.10.10.30`; metric 100 |
+| `172.17.0.0/16` | Direct on `docker0` | src `172.17.0.1` |
+| `192.168.111.0/24` | Direct on `eth1` | src `192.168.111.129`; metric 101 |
+
+There is one IPv4 default gateway: `192.168.111.2` on the NAT side. `proto dhcp` on the default route supports that it was learned via DHCP. The capture does not prove how the internal `eth0` IPv4 address is persistently provisioned.
+
+### Resolver output and package errors
+
+The first screenshot shows `resolvectl: command not found`, followed by an attempt to install `systemd-resolved` using APT. In the later screenshot, `resolvectl status` runs and reports `resolv.conf mode: stub`; none of the displayed interfaces (`eth0`, `eth1`, `docker0` and a temporary `veth` interface) has a **DNS server address listed** or DNS scope shown. `eth0` and `eth1` both display `DefaultRoute: no` in the **resolver** status; this is separate from the kernel's confirmed IPv4 default route on `eth1`.
+
+The terminal also shows APT **temporary failure resolving `http.kali.org`** and failed archive downloads. This is an observed DNS/name-resolution problem during package retrieval, **not** proof of an internet routing outage or the root cause of resolver configuration. Since a package install was attempted between screenshots, it would be inaccurate to describe the entire session as read-only or claim no guest configuration may have changed.
+
+**Scope:** This evidence completes the Kali guest address/routing inventory and captures the DNS information available at the time. Resolver server addresses were **not present in the displayed status**, so none are inferred. We are recording the observation and continuing the GitHub inventory rather than diagnosing Kali's package-install failure.
+
 ## Remaining guest verification
 
 - [x] `SOC_DC-1`: Capture IP, gateway, DHCP and DNS values from `ipconfig /all` (23 October 2026)
@@ -535,6 +569,6 @@ There is one IPv4 default gateway: `192.168.111.2` on NAT `ens33`. The NAT route
 - [x] `Ubuntu Wazuh`: Capture IPv4 default gateway `192.168.111.2` via `ens192` and DNS servers on `ens160`/`ens192` (24 October screenshot); ICMP to Windows 10 did not respond
 - [x] `Splunk-SIEM`: IPv4 `ens33=10.10.10.69/24`, `ens34=192.168.111.135/24`; default gateway `192.168.111.2` on `ens34`; DNS `192.168.111.2` on `ens34` (6 November 2026 screenshot)
 - [x] `Caldera-SOC`: Verify IPv4 `ens34=10.10.10.99/24`, `ens33=192.168.111.137/24`, gateway `192.168.111.2` on `ens33`, DNS `192.168.111.2` via `ens33` (6 November screenshot)
-- [ ] `Kali Linux`: Verify guest IP, gateway and DNS
+- [x] `Kali Linux`: IPv4 `eth0=10.10.10.30/24`, `eth1=192.168.111.129/24`, Docker bridge `172.17.0.1/16`, NAT default gateway `192.168.111.2`; resolver shows no DNS servers, APT lookup failure observed (6 November screenshots)
 - [ ] `Linux Mint`: Verify guest IP, gateway and DNS
 - [ ] `Metasploitable3`: Verify guest IP on VMnet1 and confirm NAT Adapter 2 remains disconnected when powered on
