@@ -472,6 +472,46 @@ There is **one IPv4 default gateway**, `192.168.111.2` on the NAT interface. The
 
 **Status:** Network address, gateway, routes and resolver inventory complete. No settings were changed; we are not launching a DNS or connectivity investigation as part of the GitHub architecture inventory.
 
+## Caldera-SOC — IPv4, routing and DNS verification
+
+> **Evidence:** User-provided VMware Workstation screenshot with `Caldera-SOC` selected, showing `ip -br -4 addr`, `ip -4 route`, and `resolvectl status` in the terminal on **6 November 2026 at approximately 18:11 AEDT**. The login banner reports 07:10 UTC. Textual transcription only; raw screenshot and identifiers are not committed.
+
+### Guest identity and addresses
+
+| Item | Screenshot result |
+| --- | --- |
+| VMware VM display name | `Caldera-SOC` |
+| Guest hostname (terminal prompt) | `caldera-soc` |
+| `lo` (loopback) | `127.0.0.1/8`, state UNKNOWN |
+| `ens33` | `192.168.111.137/24`, state UP, metric 100 (NAT subnet) |
+| `ens34` | `10.10.10.99/24`, state UP (internal SOC subnet) |
+
+This matches the previously identified VMware adapter assignments: Adapter 1 Custom `VMnet8` (NAT) and Adapter 2 Custom `VMnet1` (host-only). The guest interface-to-VMnet mapping is consistent with the matching subnets and VMware adapter ordering; no MAC address correlation was performed. The current internal address confirms the earlier `10.10.10.99` record.
+
+### IPv4 routes
+
+| Destination | Route / interface | Details |
+| --- | --- | --- |
+| `default` | via `192.168.111.2` on `ens33` | `proto dhcp`, src `192.168.111.137`, metric 100 |
+| `10.10.10.0/24` | directly connected on `ens34` | src `10.10.10.99` |
+| `192.168.111.0/24` | directly connected on `ens33` | src `192.168.111.137`, metric 100 |
+| `192.168.111.2` | scope-link host route on `ens33` | `proto dhcp`, src `192.168.111.137`, metric 100 |
+
+There is one IPv4 default gateway: `192.168.111.2` on NAT `ens33`. The NAT routes explicitly say DHCP; this screenshot does not prove how the internal `ens34` address is persistently configured.
+
+### DNS resolver configuration
+
+`resolvectl status` shows `resolv.conf mode: stub`.
+
+| Interface | Current scopes | DNS server(s) shown | Current DNS | DNS DefaultRoute |
+| --- | --- | --- | --- | --- |
+| `ens33` | DNS | `192.168.111.2` | `192.168.111.2` | yes |
+| `ens34` | none | None listed | None listed | no |
+
+**Interpretation:** This screenshot verifies CALDERA's guest network settings; it does **not** verify that CALDERA's application service is running, DNS resolution succeeds, or simulated activity is reaching the SOC monitoring tools. `systemd-resolved`'s DNS `DefaultRoute` is distinct from the IPv4 kernel default route.
+
+**Status:** IPv4 addresses, routes, default gateway and DNS inventoried. No configuration changes made.
+
 ## Remaining guest verification
 
 - [x] `SOC_DC-1`: Capture IP, gateway, DHCP and DNS values from `ipconfig /all` (23 October 2026)
@@ -494,7 +534,7 @@ There is **one IPv4 default gateway**, `192.168.111.2` on the NAT interface. The
 - [x] `Ubuntu Wazuh`: Verify IPv4 `ens160=10.10.10.20/24` and `ens192=192.168.111.128/24`, both UP (24 October screenshot)
 - [x] `Ubuntu Wazuh`: Capture IPv4 default gateway `192.168.111.2` via `ens192` and DNS servers on `ens160`/`ens192` (24 October screenshot); ICMP to Windows 10 did not respond
 - [x] `Splunk-SIEM`: IPv4 `ens33=10.10.10.69/24`, `ens34=192.168.111.135/24`; default gateway `192.168.111.2` on `ens34`; DNS `192.168.111.2` on `ens34` (6 November 2026 screenshot)
-- [ ] `Caldera-SOC`: Verify guest IP, gateway and DNS
+- [x] `Caldera-SOC`: Verify IPv4 `ens34=10.10.10.99/24`, `ens33=192.168.111.137/24`, gateway `192.168.111.2` on `ens33`, DNS `192.168.111.2` via `ens33` (6 November screenshot)
 - [ ] `Kali Linux`: Verify guest IP, gateway and DNS
 - [ ] `Linux Mint`: Verify guest IP, gateway and DNS
 - [ ] `Metasploitable3`: Verify guest IP on VMnet1 and confirm NAT Adapter 2 remains disconnected when powered on
