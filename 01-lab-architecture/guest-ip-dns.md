@@ -432,6 +432,46 @@ resolvectl status
 
 **Status:** Wazuh IPv4 address, gateway, route and DNS inventory complete. Actual DNS query success, Wazuh service health, and full network connectivity remain outside the current documentation check.
 
+## Splunk-SIEM — IPv4, routing and DNS verification
+
+> **Evidence:** User-provided screenshot of VMware Workstation with `Splunk-SIEM` selected, showing `ip -br -4 addr`, `ip -4 route`, and `resolvectl status` in the Linux terminal on **6 November 2026, around 18:03 AEDT**. Login banner shows 07:03 UTC, consistent with local time. Textual transcription only; no raw screenshot or identifying MAC addresses committed.
+
+### Guest identity and IPv4 addresses
+
+| Item | Screenshot-verified value |
+| --- | --- |
+| VMware VM name | `Splunk-SIEM` |
+| Linux hostname (terminal prompt) | `splunk-siem` |
+| `lo` | `127.0.0.1/8`, state UNKNOWN (loopback) |
+| `ens33` | `10.10.10.69/24`, state UP (internal lab subnet) |
+| `ens34` | `192.168.111.135/24`, state UP; metric 100 (VMware NAT subnet) |
+
+The guest address subnets align with the previously recorded VMware wiring: Adapter 1 Custom `VMnet1` (`10.10.10.0/24`), Adapter 2 Custom `VMnet8` (`192.168.111.0/24`). The exact guest interface-to-VMnet correspondence is consistent with, rather than independently MAC-matched to, the VMware settings. The internal IPv4 matches the historical `10.10.10.69` record.
+
+### IPv4 routes
+
+| Destination | Next hop / interface | Source or details |
+| --- | --- | --- |
+| `default` | `192.168.111.2` via `ens34` | `proto dhcp`, src `192.168.111.135`, metric 100 |
+| `10.10.10.0/24` | directly connected via `ens33` | src `10.10.10.69` |
+| `192.168.111.0/24` | directly connected via `ens34` | src `192.168.111.135`, metric 100 |
+| `192.168.111.2` | scope-link host route via `ens34` | `proto dhcp`, src `192.168.111.135`, metric 100 |
+
+There is **one IPv4 default gateway**, `192.168.111.2` on the NAT interface. The NAT route is labelled DHCP in the output; the screenshot does not directly establish whether `ens33` uses static configuration.
+
+### DNS configuration
+
+`resolvectl status` shows `resolv.conf mode: stub` and the following per-link settings:
+
+| Interface | Current scopes | DNS servers | Current DNS | DNS DefaultRoute |
+| --- | --- | --- | --- | --- |
+| `ens33` | none | None listed | None listed | no |
+| `ens34` | DNS | `192.168.111.2` | `192.168.111.2` | yes |
+
+**Interpretation:** The documented Splunk VM currently uses the VMware NAT DNS resolver on `ens34`. **DNS DefaultRoute** is a `systemd-resolved` DNS-routing decision; it is different from the kernel's IPv4 default route, although both point to the NAT side here. This screenshot does **not** establish whether Splunk's application forwards or receives logs successfully, or whether the VM is joined to the `soc.home.lab` domain.
+
+**Status:** Network address, gateway, routes and resolver inventory complete. No settings were changed; we are not launching a DNS or connectivity investigation as part of the GitHub architecture inventory.
+
 ## Remaining guest verification
 
 - [x] `SOC_DC-1`: Capture IP, gateway, DHCP and DNS values from `ipconfig /all` (23 October 2026)
@@ -453,7 +493,7 @@ resolvectl status
 - [x] `W.10.Pro_Soc-Lab Client`: Verify guest internal IPv4 `10.10.10.11`/DNS `10.10.10.10` and NAT IPv4 `192.168.111.132`/gateway `192.168.111.2` from 24 October screenshot
 - [x] `Ubuntu Wazuh`: Verify IPv4 `ens160=10.10.10.20/24` and `ens192=192.168.111.128/24`, both UP (24 October screenshot)
 - [x] `Ubuntu Wazuh`: Capture IPv4 default gateway `192.168.111.2` via `ens192` and DNS servers on `ens160`/`ens192` (24 October screenshot); ICMP to Windows 10 did not respond
-- [ ] `Splunk-SIEM`: Verify guest IP, gateway and DNS
+- [x] `Splunk-SIEM`: IPv4 `ens33=10.10.10.69/24`, `ens34=192.168.111.135/24`; default gateway `192.168.111.2` on `ens34`; DNS `192.168.111.2` on `ens34` (6 November 2026 screenshot)
 - [ ] `Caldera-SOC`: Verify guest IP, gateway and DNS
 - [ ] `Kali Linux`: Verify guest IP, gateway and DNS
 - [ ] `Linux Mint`: Verify guest IP, gateway and DNS
