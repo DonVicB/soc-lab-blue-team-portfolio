@@ -587,6 +587,29 @@ The `resolvectl status` output reports `resolv.conf mode: stub`. Link 2 (`ens160
 
 **Status:** Linux Mint's guest addresses, routing, default gateway and resolver settings documented. This does not prove packet-monitor capture interfaces, traffic visibility, or Wireshark functionality. No changes made.
 
+## Metasploitable3 — guest IPv4 and isolation status
+
+> **Evidence:** Two VMware Workstation screenshots of the selected `Metasploitable3` VM, captured **6 November 2026 around 18:42 AEDT**, after the user successfully booted the deliberately vulnerable guest and signed in. The screenshots show `ifconfig -a` output on an older Ubuntu guest; no raw screenshots, MAC addresses or login secrets committed.
+
+### Screenshot-confirmed network interfaces
+
+| Interface | IPv4 address | Status / interpretation |
+| --- | --- | --- |
+| `eth0` | **`10.10.10.30/24`** (netmask `255.255.255.0`) | UP, RUNNING; address belongs to internal `VMnet1` subnet |
+| `docker0` | `172.17.0.1/16` (netmask `255.255.0.0`) | UP, RUNNING; guest-local Docker bridge |
+| `lo` | `127.0.0.1` | UP, RUNNING; loopback |
+| `vethc093987` | **No IPv4 displayed** | UP, RUNNING; virtual Ethernet interface, name transcribed from screenshot |
+
+**Potential internal IPv4 address conflict:** The earlier Kali Linux screenshot of **6 November 2026** independently showed `eth0=10.10.10.30/24`. Thus **Kali and Metasploitable3 both have the same internal IPv4 recorded**. Simultaneous use on VMnet1 would result in an address conflict. The screenshots do **not** prove both machines were online at the same time or that a collision has already occurred. **Resolve the duplicate assignment before running both VMs in any joint SOC attack scenario.** Do not silently substitute a guessed replacement address.
+
+**Guest network isolation:** The older VMware library screenshot showed two virtual network adapters (Custom VMnet1 and Custom VMnet8). The user was instructed to remove/disconnect Adapter 2 as part of resolving a VMware startup PCI-slot error, and subsequently reported the guest boots successfully. Neither screenshot of the live guest proves the final VMware hardware adapter list or that NAT Adapter 2 remains absent or disconnected. Only `eth0` has a non-loopback, non-container IPv4 in the provided guest output; this does **not** independently establish that the VM has no NAT adapter, route, or internet access.
+
+**Routing / DNS evidence not yet collected:** The commands `ifconfig route` and `ifconfig -4 route` shown in the first screenshot produced errors because `ifconfig` is not the route-query command. No `ip route`, `route -n`, or DNS resolver output was supplied.
+
+**Documentation milestone:** All eight VMware guests now have a live screenshot-confirmed internal IPv4 address, though the final VM's route/DNS and NAT isolation remain **unverified**. No VM network configuration changes performed as part of this documentation update.
+
+**Optional short read-only collection when needed:** `route -n` for the legacy guest's IPv4 routing table and `cat /etc/resolv.conf` for configured DNS file contents. Before concurrent Kali/Metasploitable operation, allocate a unique internal IPv4 and verify only the intended host-only VMware adapter is attached.
+
 ## Remaining guest verification
 
 - [x] `SOC_DC-1`: Capture IP, gateway, DHCP and DNS values from `ipconfig /all` (23 October 2026)
@@ -612,4 +635,5 @@ The `resolvectl status` output reports `resolv.conf mode: stub`. Link 2 (`ens160
 - [x] `Caldera-SOC`: Verify IPv4 `ens34=10.10.10.99/24`, `ens33=192.168.111.137/24`, gateway `192.168.111.2` on `ens33`, DNS `192.168.111.2` via `ens33` (6 November screenshot)
 - [x] `Kali Linux`: IPv4 `eth0=10.10.10.30/24`, `eth1=192.168.111.129/24`, Docker bridge `172.17.0.1/16`, NAT default gateway `192.168.111.2`; resolver shows no DNS servers, APT lookup failure observed (6 November screenshots)
 - [x] `Linux Mint`: Verified `ens160=10.10.10.25/24`, `ens192=192.168.111.133/24`, NAT gateway/DNS `192.168.111.2`, resolver domain `localdomain` (6 November screenshot)
-- [ ] `Metasploitable3`: Verify guest IP on VMnet1 and confirm NAT Adapter 2 remains disconnected when powered on
+- [x] `Metasploitable3`: Verify live guest `eth0=10.10.10.30/24`, Docker bridge `172.17.0.1/16`; duplicate internal IP with Kali flagged (6 November screenshots)
+- [ ] `Metasploitable3`: Confirm NAT Adapter 2 is removed/disconnected in current VMware Hardware; review `route -n` / DNS if needed; assign a unique VMnet1 IP before using Kali and Metasploitable3 together
