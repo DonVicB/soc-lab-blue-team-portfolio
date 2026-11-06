@@ -546,6 +546,47 @@ The terminal also shows APT **temporary failure resolving `http.kali.org`** and 
 
 **Scope:** This evidence completes the Kali guest address/routing inventory and captures the DNS information available at the time. Resolver server addresses were **not present in the displayed status**, so none are inferred. We are recording the observation and continuing the GitHub inventory rather than diagnosing Kali's package-install failure.
 
+## Linux Mint — IPv4, routing and DNS verification
+
+> **Evidence:** VMware Workstation screenshot with `Linux Mint` selected, showing `ip -br -4 addr`, `ip -4 route`, and `resolvectl status` in a terminal on **6 November 2026 at approximately 18:26 AEDT**. Text-only evidence recorded; no user account, MAC address or raw screenshot committed.
+
+### Guest identity and IPv4 interfaces
+
+| Interface / item | Screenshot value | Role |
+| --- | --- | --- |
+| VMware display name | `Linux Mint` | Linux packet-monitoring / Wireshark VM |
+| Terminal hostname | `donvi-Virtual-Machine` | As shown in terminal prompt |
+| `lo` | `127.0.0.1/8`, state UNKNOWN | Loopback |
+| `ens160` | `10.10.10.25/24`, state UP | Internal SOC / VMnet1 subnet |
+| `ens192` | `192.168.111.133/24`, state UP | VMware NAT / VMnet8 subnet |
+
+The interface addresses match the previously verified VMware Virtual Network Editor subnets and the earlier Library setting of **Adapter 1 Host-only + Adapter 2 NAT**. Association by address is consistent; no MAC-based binding comparison was performed. The screenshot does not show whether `ens160` is statically configured.
+
+### IPv4 routing
+
+| Destination | Via / interface | Details |
+| --- | --- | --- |
+| `default` | `192.168.111.2` via `ens192` | `proto dhcp`, src `192.168.111.133`, metric 101 |
+| `10.10.10.0/24` | directly connected `ens160` | `proto kernel`, src `10.10.10.25`, metric 100 |
+| `192.168.111.0/24` | directly connected `ens192` | `proto kernel`, src `192.168.111.133`, metric 101 |
+
+The **single IPv4 default route** uses VMware NAT `192.168.111.2` through `ens192`.
+
+### DNS resolver
+
+The `resolvectl status` output reports `resolv.conf mode: stub`. Link 2 (`ens160`) shows `Current Scopes: none` with no server address listed. Link 3 (`ens192`) shows:
+
+| Setting | Screenshot result |
+| --- | --- |
+| Current Scopes | DNS |
+| Current DNS Server | `192.168.111.2` |
+| DNS Servers | `192.168.111.2` |
+| DNS Domain | `localdomain` |
+
+`resolvectl`'s per-link `+DefaultRoute` for `ens192` refers to DNS request routing, not an additional kernel default gateway. No DNS server is shown on internal `ens160`.
+
+**Status:** Linux Mint's guest addresses, routing, default gateway and resolver settings documented. This does not prove packet-monitor capture interfaces, traffic visibility, or Wireshark functionality. No changes made.
+
 ## Remaining guest verification
 
 - [x] `SOC_DC-1`: Capture IP, gateway, DHCP and DNS values from `ipconfig /all` (23 October 2026)
@@ -570,5 +611,5 @@ The terminal also shows APT **temporary failure resolving `http.kali.org`** and 
 - [x] `Splunk-SIEM`: IPv4 `ens33=10.10.10.69/24`, `ens34=192.168.111.135/24`; default gateway `192.168.111.2` on `ens34`; DNS `192.168.111.2` on `ens34` (6 November 2026 screenshot)
 - [x] `Caldera-SOC`: Verify IPv4 `ens34=10.10.10.99/24`, `ens33=192.168.111.137/24`, gateway `192.168.111.2` on `ens33`, DNS `192.168.111.2` via `ens33` (6 November screenshot)
 - [x] `Kali Linux`: IPv4 `eth0=10.10.10.30/24`, `eth1=192.168.111.129/24`, Docker bridge `172.17.0.1/16`, NAT default gateway `192.168.111.2`; resolver shows no DNS servers, APT lookup failure observed (6 November screenshots)
-- [ ] `Linux Mint`: Verify guest IP, gateway and DNS
+- [x] `Linux Mint`: Verified `ens160=10.10.10.25/24`, `ens192=192.168.111.133/24`, NAT gateway/DNS `192.168.111.2`, resolver domain `localdomain` (6 November screenshot)
 - [ ] `Metasploitable3`: Verify guest IP on VMnet1 and confirm NAT Adapter 2 remains disconnected when powered on
