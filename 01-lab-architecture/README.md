@@ -1,6 +1,6 @@
 # VMware SOC lab architecture
 
-> **Status: Eight of eight VMware VM network adapter configurations documented as of 23 October 2026.** Six profiles A–F mapped by the lab owner and two directly identified in VMware Library screenshots. **Guest IPv4, routing and available DNS observations documented for 7 of 8 VMs (DC, Windows 10, Wazuh, Splunk, CALDERA, Kali and Linux Mint); only Metasploitable3 remains.**  
+> **Status: Eight of eight VMware VM network adapter configurations documented as of 23 October 2026.** Six profiles A–F mapped by the lab owner and two directly identified in VMware Library screenshots. **Live internal guest IPv4 captured for all 8 VMs. Metasploitable3 route/DNS and final NAT isolation remain unverified; Kali and Metasploitable3 both show `10.10.10.30/24`, requiring correction before they are run together.**  
 > **Evidence:** VMware Workstation Library and Virtual Network Editor screenshots supplied on **23 October 2026**. VM IPs and some connection assumptions below were recorded during the **16–18 October 2026** walkthrough. These older observations are not current guest configuration evidence.
 
 ## Purpose and scope
@@ -32,7 +32,7 @@ The screenshot confirms **eight VM display names** in the current VMware Worksta
 | --- | --- | --- | --- | --- |
 | `Kali Linux` | Authorised attack simulation; guest hostname `kali-soc` | `10.10.10.30` **verified 6 Nov** | Adapter 1: Host-only; Adapter 2: NAT (automatic settings) | Owner mapping: Pair E; `eth0 10.10.10.30/24`, `eth1 192.168.111.129/24`, default gateway `192.168.111.2`, Docker bridge `172.17.0.1/16`; DNS not listed |
 | `Linux Mint` | Wireshark / network monitoring; hostname `donvi-Virtual-Machine` | `10.10.10.25` **verified 6 Nov** | Adapter 1: Host-only mode; Adapter 2: NAT mode | Named Library + live terminal: `ens160 10.10.10.25/24`, `ens192 192.168.111.133/24`, NAT gateway/DNS `192.168.111.2` |
-| `Metasploitable3` | Deliberately vulnerable training target | Not yet recorded | Adapter 1: Custom VMnet1; Adapter 2: Custom VMnet8 | **Named Library screenshot**; 6.1 GB RAM, 4 processors, 39.1 GB SCSI; powered off |
+| `Metasploitable3` | Deliberately vulnerable training target (older Ubuntu) | `10.10.10.30` **verified 6 Nov; conflicts with Kali assignment** | Older screenshot: Adapter 1 Custom VMnet1; Adapter 2 Custom VMnet8; current NAT attachment unverified | Current guest `eth0=10.10.10.30/24`, Docker bridge `172.17.0.1/16`; route/DNS unknown; PCI startup error previously resolved |
 | `SOC_DC-1` | Windows Server 2019 / AD DS / DNS; Windows hostname `SOC_DC01` | `10.10.10.10` **verified 23 Oct** | Adapter 1: Custom VMnet1; Adapter 2: Custom VMnet8 | Owner mapping: Pair F; IPv4, NAT address `192.168.111.130`, gateway and DNS screenshot-verified |
 | `Ubuntu Wazuh` | Wazuh manager / dashboard; guest hostname `wazuh-server` | `10.10.10.20` **verified 24 Oct** | Adapter 1: Custom VMnet1; Adapter 2: NAT mode | Owner mapping: Pair D; `ens160 10.10.10.20/24`, `ens192 192.168.111.128/24`; gateway `192.168.111.2`; resolver settings verified |
 | `W.10.Pro_Soc-Lab Client` | Windows 10 client; guest hostname previously recorded as `DonW10` (not visible in this screenshot) | `10.10.10.11` **verified 24 Oct** | Adapter 1: Custom VMnet8; Adapter 2: Custom VMnet1 | Owner mapping: Pair C; internal `10.10.10.11`, NAT `192.168.111.132`, gateway/DNS screenshot-verified |
@@ -71,7 +71,7 @@ flowchart TB
     caldera["Caldera-SOC / caldera-soc<br/>VMnet1 10.10.10.99 (verified)<br/>NAT 192.168.111.137 (verified)"]
     kali["Kali Linux / kali-soc<br/>VMnet1 10.10.10.30 (verified)<br/>NAT 192.168.111.129 (verified)"]
     mint["Linux Mint / donvi-Virtual-Machine<br/>VMnet1 10.10.10.25 (verified)<br/>NAT 192.168.111.133 (verified)"]
-    target["Metasploitable3<br/>guest IP pending"]
+    target["Metasploitable3<br/>VMnet1 10.10.10.30 (verified)<br/>⚠ Duplicates Kali IP; NAT unverified"]
 
     dockerbridge["Kali docker0 bridge<br/>172.17.0.0/16 (guest-local)"]
     kali ---|"Docker bridge inside guest"| dockerbridge
@@ -93,10 +93,10 @@ flowchart TB
     vmnet1 ---|"Adapter 1: Host-only mode"| mint
     vmnet8 ---|"Adapter 2: NAT mode"| mint
     vmnet1 ---|"Adapter 1: Custom VMnet1"| target
-    vmnet8 ---|"Adapter 2: Custom VMnet8 ⚠"| target
+    vmnet8 -.-|"Adapter 2: VMnet8 in earlier screenshot<br/>Current attachment not verified"| target
 ```
 
-**Note on diagram notation:** The generic mode links for Kali, Wazuh and Linux Mint represent VMware's Host-only/NAT selections, not explicit Custom VMnet assignments. No live traffic path or firewall permission has been confirmed. **Risk to address:** Metasploitable3 is configured with VMnet8 NAT as well as VMnet1; consider disconnecting/removing its NAT adapter for isolated testing before powering it on.
+**Note on diagram notation:** Generic Host-only/NAT selections for Kali, Wazuh and Linux Mint are not explicit custom VMnet assignments. The dotted Metasploitable3 NAT connection reflects an **earlier hardware view only**; its present attachment remains to be verified. Neither the guest's successful boot nor its IP table proves isolation. The diagram flags Kali and Metasploitable3's duplicate internal IP, to be corrected before operating them together.
 
 ## Network adapter evidence — mapped profiles from 23 October 2026
 
@@ -146,6 +146,14 @@ The `resolvectl status` screenshot reports stub mode, but **no DNS server IPs ar
 ## Linux Mint guest networking verification — 6 November 2026
 
 The selected `Linux Mint` VM shows terminal hostname `donvi-Virtual-Machine`, with **`ens160 10.10.10.25/24`** on internal VMnet1 and **`ens192 192.168.111.133/24`** on NAT VMnet8, both UP. The default IPv4 gateway is `192.168.111.2` via `ens192` (DHCP, metric 101); the internal connected route has metric 100. `resolvectl status` shows stub resolver mode, no DNS server on `ens160`, and `192.168.111.2` as current/listed DNS server for `ens192` with domain `localdomain`. These observations document the VM's network configuration, **not** packet capture capability. See [guest IP and DNS evidence](guest-ip-dns.md).
+
+## Metasploitable3 guest IPv4 verification — 6 November 2026
+
+The intentionally vulnerable `Metasploitable3` VM successfully booted after the owner resolved a VMware PCI-slot startup error. Its `ifconfig -a` output shows `eth0 10.10.10.30/24` UP/RUNNING, guest-local Docker bridge `docker0 172.17.0.1/16` and loopback `127.0.0.1`. No additional physical/NAT IPv4 was shown. A legacy `veth` container interface also appears without an IPv4 address.
+
+**Important conflict:** Kali's previously verified `eth0 10.10.10.30/24` duplicates this Metasploitable3 guest address. This is a **configuration conflict for simultaneous VMnet1 use**, not proof of a collision already occurring. Do not run both with the same IP address. Assign a unique lab IP before joint tests.
+
+The first screenshot's `ifconfig route` attempt is invalid, so the guest's **default route and DNS remain unknown**. Its present VMware NAT hardware connection also remains unverified: the older Library view had a VMnet8 adapter, but successful boot and a single visible guest LAN IPv4 do not prove it was physically removed. This is a documentation milestone (all 8 guests have observed internal IPv4) rather than proof of complete network isolation. See [guest IP and DNS evidence](guest-ip-dns.md).
 
 ## Guest IP, gateway and DNS evidence — Step 4.4
 
@@ -221,3 +229,4 @@ This repository is currently private, but private repositories can still be acci
 | 2026-11-06 | Caldera-SOC guest verified: `ens34 10.10.10.99/24`, `ens33 192.168.111.137/24`, default gateway and DNS `192.168.111.2` on NAT | Screenshot-backed; no guest settings changed, CALDERA service status not checked |
 | 2026-11-06 | Kali guest IPv4 `10.10.10.30/24`, NAT `192.168.111.129/24`, gateway `192.168.111.2`; Docker bridge `172.17.0.1/16` | Screenshot verified; DNS resolver server addresses not listed and APT name-resolution errors observed |
 | 2026-11-06 | Linux Mint guest verified: `ens160 10.10.10.25/24`, `ens192 192.168.111.133/24`, NAT default gateway/DNS `192.168.111.2` | Screenshot-verified; no network changes; Metasploitable3 guest inventory remains |
+| 2026-11-06 | Metasploitable3 guest internal `eth0 10.10.10.30/24`, Docker `172.17.0.1/16` recorded; all eight guest IPv4 addresses now captured | Screenshot verified; duplicate internal IP with Kali, no route/DNS or current NAT-isolation evidence; no fixes made |
