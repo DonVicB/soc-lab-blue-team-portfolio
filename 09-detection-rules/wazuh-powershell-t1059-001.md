@@ -113,7 +113,7 @@ Exit the interactive test with Ctrl+C, then on the Windows 10 lab endpoint inspe
 Get-WinEvent -ListLog 'Microsoft-Windows-Sysmon/Operational' | Select-Object LogName, RecordCount, IsEnabled
 ```
 
-This is read-only and confirms whether the source log is enabled and contains records at the time of collection. It is **not** proof Wazuh ingested the events. Record a redacted Sysmon Event ID 1 and alert correlation separately once agent connectivity is restored.
+**Result (7 November screenshot):** The Windows 10 Sysmon Operational log is **enabled** with **33,076 records**. This confirms local log availability but **not** how many of those records have Event ID 1, whether Wazuh ingested them, or whether rule `100101` fired. See [Windows endpoint security evidence](../04-windows-endpoint-security/README.md). A read-only sample of recent Event ID 1 metadata and agent/alert correlation remain pending.
 
 Do not commit complete raw alert files or unredacted endpoint command lines.
 
