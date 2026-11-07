@@ -14,12 +14,12 @@ The goal is to make each exercise repeatable and explain **what happened, how it
 
 | Component | Purpose | Documentation status |
 | --- | --- | --- |
-| VMware Workstation | Virtualisation and isolated lab networks | To document |
+| VMware Workstation | Virtualisation and isolated lab networks | [Eight-VM inventory and topology documented](01-lab-architecture/README.md); some configuration discrepancies flagged |
 | Windows Server 2019 / Active Directory Domain Services | Identity management, domain controller, DNS, users and groups | To document |
-| Windows 10 endpoint | Domain-joined workstation and security telemetry | To document |
-| Sysmon (System Monitor) | Detailed Windows endpoint events | [Local Sysmon event log verified](04-windows-endpoint-security/README.md): enabled with 33,076 records (7 Nov screenshot); Wazuh ingestion unverified |
-| Wazuh | Security information and event management (SIEM), alerts and rules | [Deployment documentation in progress](05-wazuh-siem/README.md): server `v4.14.9` / `rc2` verified, manager active, 2 registered endpoints disconnected (7 Nov screenshot) |
-| Splunk | Security log searches and investigations | Setup / validation to document |
+| Windows 10 endpoint | Workstation and security telemetry | [Windows endpoint evidence](04-windows-endpoint-security/README.md): Sysmon process creation and active Wazuh agent verified |
+| Sysmon (System Monitor) | Detailed Windows endpoint events | [Source and Wazuh process-creation alert evidence](04-windows-endpoint-security/README.md): 60 parsed Sysmon Event ID 1 manager alerts |
+| Wazuh | Security information and event management (SIEM), alerts and rules | [Manager and detection evidence](05-wazuh-siem/README.md): active agent `002`, 60 parsed Sysmon Event ID 1 alerts across six rules; custom rule `100101` unverified |
+| Splunk | Security log searches and investigations | [Splunk baseline started](06-splunk-siem/README.md); current version, ingestion and investigation evidence pending |
 | Kali Linux | Authorised attack simulation | To document |
 | MITRE CALDERA | Adversary emulation | Setup / validation to document |
 | Wireshark | Network traffic analysis | To document |
@@ -43,9 +43,10 @@ The inventory and configurations will be checked against the current virtual mac
 ## Lab architecture documentation
 
 - [VMware SOC lab architecture](01-lab-architecture/README.md) — all eight guest internal IPv4 addresses documented from live evidence; some routing/DNS and Metasploitable3 isolation remain to verify.
-- [Wazuh SIEM deployment and verification](05-wazuh-siem/README.md) — screenshot confirms active manager on 7 November 2026; two registered Windows agents disconnected, detection evidence pending.
+- [Wazuh SIEM deployment and verification](05-wazuh-siem/README.md) — active Windows agent `002`, 60 parsed Sysmon Event ID 1 alert records; custom PowerShell rule `100101` not yet validated.
 - [Detection engineering index](09-detection-rules/README.md) — PowerShell rule `100101`, MITRE T1059.001, configuration verified; alert validation pending.
-- [Windows 10 endpoint security](04-windows-endpoint-security/README.md) — Sysmon log enabled, record count documented; Event ID 1 sample still pending.
+- [Windows 10 endpoint security](04-windows-endpoint-security/README.md) — local Sysmon Event ID 1 and manager alert evidence verified.
+- [Splunk SIEM search and investigation plan](06-splunk-siem/README.md) — earlier installation and network evidence recorded; live version and search proof next.
 
 ## Planned repository structure
 
@@ -90,10 +91,10 @@ Each case study should cover:
 - [x] Create a private GitHub repository.
 - [x] Add an initial portfolio README.
 - [x] Add `.gitignore` to exclude secrets, VM disks, and raw SOC evidence.
-- [ ] Capture and sanitise current lab inventory.
-- [ ] Create a current-state network architecture diagram.
+- [x] Capture current eight-VM IP inventory (some mismatches and routing/segmentation checks remain).
+- [x] Create network architecture diagram (annotated with evidence gaps).
 - [ ] Document Windows Server / Active Directory and Windows 10.
-- [ ] Document Sysmon, Wazuh and validated detection rules (Wazuh manager service recorded; agent and detection evidence still pending).
+- [x] Document Sysmon → Wazuh alert baseline (60 parsed Event ID 1 records; custom rule `100101` pending separate validation).
 - [ ] Document Splunk ingestion, searches and dashboards.
 - [ ] Document controlled Kali / CALDERA simulations.
 - [ ] Publish evidence-based investigation case studies.
