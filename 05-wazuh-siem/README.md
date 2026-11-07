@@ -244,15 +244,31 @@ sudo grep '"id":"002"' /var/ossec/logs/alerts/alerts.json | grep -ci 'Microsoft-
 
 **Assessment:** The current manager alert file contains a substantial set of **Sysmon-related alert records associated with the active Windows 10 agent**. Combined with the verified source Sysmon Operational log and the active manager-side agent `002`, this is persuasive evidence of the *Windows Sysmon → Wazuh agent → manager alert file* flow. Because both counts use string matching, neither `148` nor `229` has been independently validated as a count of uniquely parsed JSON alerts. The values do not identify Sysmon **Event ID 1**, prove all events are recent, or demonstrate custom PowerShell rule `100101` firing.
 
-## Next read-only verification — Sysmon Event ID 1 in manager alerts
+## Next read-only verification — Rule IDs for Sysmon process creation
 
-On the Ubuntu Wazuh manager, run:
+The Step 5.16 result is now **60 matching alert-file lines** with agent `002`, Sysmon provider and Event ID `1`. The next validation is to parse JSON alert records and count their `rule.id` values. The special-purpose PowerShell rule `100101` still has not been observed firing.
+
+## Step 5.16 — Sysmon Event ID 1 found in Wazuh alerts (7 November 2026)
+
+**Operator-reported result:** The lab owner ran the read-only command below on the Ubuntu Wazuh manager and received `60`:
 
 ```bash
 sudo grep '"id":"002"' /var/ossec/logs/alerts/alerts.json | grep -i 'Microsoft-Windows-Sysmon' | grep -c '"eventID":"1"'
 ```
 
-This counts current-file lines that match the agent string, provider and the **exact** `"eventID":"1"` JSON fragment. A positive count would provide additional evidence of process-creation Event ID `1` in Wazuh alerts; `0` may reflect different JSON field formatting or alerting/retention and is not definitive proof of missing ingestion. Avoid sharing raw command lines or sensitive log entries.
+The search counts lines in the **current Wazuh JSON alert file** that simultaneously contain the agent-ID fragment `"id":"002"`, Microsoft Sysmon provider text and `"eventID":"1"`. A result of **60 matching lines** supports that agent `002`'s Sysmon **Event ID 1 (Process Creation)** telemetry was processed into Wazuh alert records.
+
+### Evidence progression
+
+| Recorded check | User-reported grep line count | Evidence limit |
+| --- | ---: | --- |
+| Agent `002` | 229 | No event/provider filter |
+| Agent `002` and Microsoft Sysmon provider | 148 | Not limited to process creation |
+| Agent `002`, Sysmon provider, and Event ID `1` | **60** | Does not identify exact Wazuh rule IDs or unique parsed alert objects |
+
+**Assessment:** Combined with the Windows VM's enabled and populated Sysmon Operational channel, local Event ID 1 records, active WazuhSvc service, manager-side `agent_control -i 002` status **Active**, and successful TCP 1514 probe, this gives substantial evidence for the **Windows Sysmon → Wazuh agent → manager alert file** pipeline. It does **not** yet demonstrate that custom PowerShell rule `100101` fired, that all 60 lines represent unique alerts, or that the records are current to the exact time of the check. This is not an alert-efficacy assessment.
+
+**Next evidence:** Parse the current JSON alert file and summarize **Wazuh rule IDs applied to Sysmon Event ID 1 records from agent `002`**, rather than exposing raw endpoint command lines.
 
 ## Security and evidence handling
 
