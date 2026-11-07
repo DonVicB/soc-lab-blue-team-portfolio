@@ -187,6 +187,20 @@ sudo grep '"id":"002"' /var/ossec/logs/alerts/alerts.json | grep -i 'Microsoft-W
 
 A positive result supports actual Sysmon process-creation alerts; zero requires checking JSON structure and alert filtering before drawing a conclusion.
 
+## Step 5.16 — Wazuh alert evidence for Sysmon Event ID 1 (7 November 2026)
+
+The owner ran a read-only line count on the Ubuntu Wazuh manager:
+
+```bash
+sudo grep '"id":"002"' /var/ossec/logs/alerts/alerts.json | grep -i 'Microsoft-Windows-Sysmon' | grep -c '"eventID":"1"'
+```
+
+**Operator-reported result:** `60` matching lines in the current `alerts.json`. The same series of checks previously returned **229** matching lines for agent `002` and **148** when additionally filtering for the Sysmon provider.
+
+**Evidence conclusion:** The Wazuh alert file now contains records matching the active Windows 10 agent `002`, the `Microsoft-Windows-Sysmon` provider, and **Event ID `1` (Process Creation)**. This, together with source-side Sysmon records and the manager's **Active** agent status, is strong evidence of a functioning **Sysmon-to-Wazuh alerting pipeline**. These are literal grep line counts, not independently deduplicated JSON alert objects. **The custom PowerShell rule `100101` has not yet been shown to match** and its efficacy is not claimed.
+
+**Next:** Aggregate the Wazuh `rule.id` values for those Sysmon process-creation alerts without printing unredacted process command lines. See [Wazuh SIEM](../05-wazuh-siem/README.md) for evidence progression and source limits.
+
 ## Next portfolio milestones
 
 - [x] Confirm Sysmon Operational log exists and is enabled.
@@ -196,7 +210,7 @@ A positive result supports actual Sysmon process-creation alerts; zero requires 
 - [x] Match Windows guest hostname `DESKTOP-2MNIK0U` to the manager's Active agent `002` by name (7 November screenshot).
 - [x] Corroborate Windows VM identity and active Wazuh registration `002` using manager-side OS and version details (7 November 2026 screenshot).
 - [x] Verify Sysmon-provider alert-file line matches for active agent `002`: 148 (7 November 2026; operator-reported grep result).
-- [ ] Verify specifically Sysmon Event ID `1` exists among manager alert records (provider matches alone are insufficient).
+- [x] Find agent `002` + Sysmon provider + Event ID `1` in Wazuh's current alert file: 60 matching lines (7 November 2026; user-reported).
 - [ ] Correlate a controlled, redacted Sysmon process event with Wazuh rule `100101` or document why it does not fire.
 
 See [Wazuh SIEM](../05-wazuh-siem/README.md) and [PowerShell detection rule analysis](../09-detection-rules/wazuh-powershell-t1059-001.md).
