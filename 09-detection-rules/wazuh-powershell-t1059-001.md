@@ -68,23 +68,52 @@ sudo grep -c '"id":"100101"' /var/ossec/logs/alerts/alerts.json
 
 **Assessment:** No line in the *current file* matched that exact text. This is **not evidence that the rule is broken**, has never fired, or that historical/rotated alerts contain no matches. The command is a literal text search, so different JSON formatting may also affect results. The previous agent inventory reported both registered Windows agents disconnected. Do **not** describe this rule as a demonstrated live detection from the present evidence.
 
-## Step 5.6 — Interactive Wazuh Logtest launched, 7 November 2026
+## Step 5.6 — Synthetic Sysmon JSON Logtest, 7 November 2026
 
-A screenshot of the Ubuntu Wazuh VM confirms that `sudo /var/ossec/bin/wazuh-logtest` started successfully as version `v4.14.9` and printed `Type one log per line`. **No test event or matching rule output has been supplied yet.** A running test tool is not evidence that custom rule `100101` fired.
+A screenshot of the Ubuntu Wazuh VM confirms that `sudo /var/ossec/bin/wazuh-logtest` started successfully as version `v4.14.9`. The operator pasted the following **synthetic** process-creation event (format shown with indentation for readability):
 
-**Important tool limitation:** Standard Windows Sysmon EventChannel events use Wazuh's internal `windows_eventchannel` decoder. Pasting their reconstructed JSON form into CLI `wazuh-logtest` ordinarily invokes the `json` decoder and may not traverse the normal `60000` → `60004` → `61600` → `61603` parent-rule path needed by `<if_group>sysmon_event1</if_group>`. Therefore a negative interactive JSON test is **inconclusive** for live Windows EventChannel detection. Do not modify `0575-win-base_rules.xml` just to force a passing test in the running manager. Wazuh's built-in decoder behavior and this issue are documented in project discussions and ruleset files.
-
-**Next:** Safely feed one synthetic Sysmon Event 1 JSON record into the interactive tool to observe decoding and rule evaluation, label any result **simulated**, and distinguish JSON test limitations from agent ingestion. Reconnect/validate Windows agents and use a real Sysmon event only as a separate controlled exercise.
-
-## Next validation step
-
-Use Wazuh's interactive test utility to check loaded rules using a representative, sanitized event, without changing the deployed rules:
-
-```bash
-sudo /var/ossec/bin/wazuh-logtest
+```json
+{
+  "win": {
+    "system": {
+      "providerName": "Microsoft-Windows-Sysmon",
+      "channel": "Microsoft-Windows-Sysmon/Operational",
+      "severityValue": "INFORMATION",
+      "eventID": "1"
+    },
+    "eventdata": {
+      "image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "commandLine": "powershell.exe -enc TEST"
+    }
+  }
+}
 ```
 
-Collect the initial output and, in a subsequent step, feed a safe representative Sysmon process-create event. An interactive logtest match is proof of **test matching only**, not confirmation of live agent telemetry or alert generation.
+**Screenshot-visible test results:**
+
+| Stage | Result |
+| --- | --- |
+| Phase 1 | Completed pre-decoding, input event echoed |
+| Phase 2 | Completed decoding, decoder name `json` |
+| Fields extracted | `win.eventdata.image`, `win.eventdata.commandLine`, `win.system.eventID=1`, provider and channel |
+| Phase 3 | **No Phase 3 rule-filtering output shown** |
+| Rule `100101` | **No matching rule output; not triggered in this test** |
+
+**Interpretation:** Field extraction works for this JSON sample. The rule requires `<if_group>sysmon_event1</if_group>`, which depends on a previously matched parent rule belonging to that group. The sample was decoded using `json`; the screenshot does not demonstrate that the Windows EventChannel rule chain or the `sysmon_event1` group was reached. This is the **likely reason** for the absent Phase 3 match, but the screenshot alone does not prove the exact internal rule-evaluation path.
+
+Wazuh's documented `<if_group>` semantics require a prior match in the specified group. Logtest is a rules sandbox; its result for this manually supplied JSON is **inconclusive for live EventChannel events**. Do not modify built-in rules to force a passing test.
+
+**Outcome:** `100101` remains **configuration-verified, alert-unverified**. Neither live endpoint ingestion nor rule effectiveness has been demonstrated. The manager's last agent inventory reported both Windows agents disconnected.
+
+## Next evidence priority — Windows Sysmon source
+
+Exit the interactive test with Ctrl+C, then on the Windows 10 lab endpoint inspect the Sysmon Operational log metadata:
+
+```powershell
+Get-WinEvent -ListLog 'Microsoft-Windows-Sysmon/Operational' | Select-Object LogName, RecordCount, IsEnabled
+```
+
+This is read-only and confirms whether the source log is enabled and contains records at the time of collection. It is **not** proof Wazuh ingested the events. Record a redacted Sysmon Event ID 1 and alert correlation separately once agent connectivity is restored.
 
 Do not commit complete raw alert files or unredacted endpoint command lines.
 
