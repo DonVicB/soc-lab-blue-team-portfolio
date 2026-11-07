@@ -144,9 +144,9 @@ The UI was set to **Year to date**, spanning **1 January 2026 to 8 November 2026
 
 **Interpretation:** No events matched the **literal terms** `sandcat` or `caldera` in `main` for the selected date range. This is a *negative text-search result*, **not** evidence that the earlier controlled exercise did not occur, nor proof that no related telemetry exists. Relevant events may use an executable name, encoded command, generic process details or a Defender threat identifier without either word. The time picker was **not** All time, so older data was outside this search.
 
-## Step 6.7 — Next step: isolate Defender and quarantine references
+## Step 6.7 — Defender/quarantine keyword search with timestamps (8 November 2026)
 
-In **Splunk Web → Search & Reporting**, set the time picker to **All time**, then run:
+**Evidence:** Screenshot of Splunk Search & Reporting, time picker **Year to date** (1 January 2026 to 8 November 2026 around 07:06 AEDT), executing:
 
 ```spl
 index=main (quarantine OR "Windows Defender" OR "Microsoft Defender")
@@ -155,7 +155,32 @@ index=main (quarantine OR "Windows Defender" OR "Microsoft Defender")
 | sort - count
 ```
 
-This returns aggregate counts and timestamps by source without exposing raw endpoint command lines or Defender event payloads. A positive result warrants a separate, carefully redacted event-ID and time-correlation investigation. A zero result would require validating data coverage and other detection indicators before concluding the incident is absent. Do not claim a confirmed quarantine from broad keyword matches alone.
+All returned rows show host `DESKTOP-2MNIK0U` in index `main`. Times are rendered by Splunk as displayed, and may reflect Splunk's configured display time zone.
+
+| Sourcetype | Matched events | First seen (Splunk display) | Last seen (Splunk display) |
+| --- | ---: | --- | --- |
+| `XmlWinEventLog:Microsoft-Windows-Sysmon/Operational` | 1,010 | 2026-10-17 19:15:04.551 | 2026-11-07 22:18:35.864 |
+| `WinEventLog:Application` | 209 | 2026-08-14 16:06:17.440 | 2026-11-07 19:01:42.985 |
+| `WinEventLog:Security` | 124 | 2026-09-16 21:19:14.648 | 2026-10-18 18:19:55.026 |
+| `WinEventLog:System` | 65 | 2026-08-14 16:48:24.278 | 2026-11-07 14:56:40.180 |
+| **Total** | **1,408** | | |
+
+**Analysis:** This count matches Step 6.5's broader OR query, which additionally included `sandcat` and `caldera`. The separate Step 6.6 `sandcat OR caldera` search returned **0** over the Year-to-date period. Therefore the keyword matches within this period can be attributed to one or more of `quarantine`, `Windows Defender`, or `Microsoft Defender`, **not** demonstrably to CALDERA/Sandcat names. This does **not** mean 1,408 actual Defender detections or quarantine actions occurred: broad text references to Defender may be benign. No dedicated Defender Operational sourcetype is listed in these results.
+
+**Time-range nuance:** The user was asked to select All time, but this screenshot clearly shows **Year to date**. The reported event timestamps are within that range. Do not relabel the observed query as All time.
+
+## Step 6.8 — Next step: isolate quarantine mentions
+
+In Splunk Web → Search & Reporting, set **All time** and run:
+
+```spl
+index=main (quarantine OR quarantined)
+| stats count min(_time) as first_seen max(_time) as last_seen by host sourcetype
+| convert ctime(first_seen) ctime(last_seen)
+| sort - count
+```
+
+This restricts the search to quarantine-related text while keeping the output aggregated. Even if positive, matching lines are **not** proof that Defender actually quarantined a file; confirm event identifiers, provider and action details in a later *redacted* event-level check. If zero, review Defender Operational source coverage separately rather than declaring the earlier controlled incident unrecorded.
 
 ## Future case study format
 
