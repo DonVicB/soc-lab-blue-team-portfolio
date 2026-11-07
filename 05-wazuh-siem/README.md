@@ -120,16 +120,22 @@ An Administrator PowerShell screenshot from `W.10.Pro_Soc-Lab Client` shows that
 
 See the [Windows endpoint security evidence](../04-windows-endpoint-security/README.md).
 
+## Windows 10 Sysmon Event ID 1 confirmation — 7 November 2026
+
+Windows Administrator PowerShell displayed five recent Sysmon Operational process-creation records with `Event ID=1`, all from provider `Microsoft-Windows-Sysmon`, with timestamps ranging from **14:58:42 to 14:59:37** (guest local time). The log was already shown as enabled with 33,076 records of all event types. This provides **source-side event evidence**, but the last Wazuh inventory showed agent `001` disconnected and no Wazuh rule `100101` alert has been verified.
+
+See the [Windows endpoint Sysmon evidence](../04-windows-endpoint-security/README.md).
+
 ## Next evidence collection
 
-On the Windows 10 lab endpoint, list only non-sensitive metadata for the five most recent Sysmon process-creation (Event ID 1) records:
+On the Windows 10 endpoint, determine the local Wazuh agent service state without changing it:
 
 ```powershell
-Get-WinEvent -FilterHashtable @{LogName='Microsoft-Windows-Sysmon/Operational'; Id=1} -MaxEvents 5 |
-  Select-Object TimeCreated, Id, ProviderName
+Get-Service | Where-Object { $_.Name -like '*Wazuh*' -or $_.DisplayName -like '*Wazuh*' } |
+  Select-Object Name, DisplayName, Status, StartType
 ```
 
-Review any event content for sensitive command lines before sharing or committing it.
+This is a read-only service inventory; we will document the state before deciding whether a connection test is needed.
 
 ## Security and evidence handling
 
