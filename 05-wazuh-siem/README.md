@@ -42,7 +42,8 @@ sudo systemctl is-active wazuh-manager
 - [x] Enumerate registered agents and their current status using the manager CLI (7 November 2026; two endpoints disconnected).
 - [ ] Document Windows 10 agent connectivity and endpoint log collection (current agent status: disconnected; do not claim live collection).
 - [ ] Document the Sysmon event source and one redacted example detection.
-- [ ] Document the previously discussed ATT&CK **T1059.001 (PowerShell)** custom detection rule, including the exact rule, test event and alert evidence, when collected.
+- [x] Document screenshot-verified identity and intended conditions of [custom PowerShell detection rule `100101`](../09-detection-rules/wazuh-powershell-t1059-001.md) (7 November 2026).
+- [ ] Validate rule loading, capture the complete regex and correlate a representative Sysmon event with an actual Wazuh alert.
 - [ ] Document a repeatable alert investigation with timestamps and redacted supporting evidence.
 
 ## Agent inventory — 7 November 2026
@@ -84,15 +85,23 @@ WAZUH_TYPE="server"
 
 These are the exact identifiers displayed by the local installation. The revision field is transcribed as `rc2` without inferring whether it is a release channel or build status. This is a **version inventory**, not a vulnerability, service-health or upgrade assessment. The same screenshot again displays `wazuh-manager` as active and Windows agent IDs `001` and `002` as disconnected.
 
+## Custom PowerShell detection rule — 7 November 2026
+
+A screenshot of the corrected grep command against `/var/ossec/etc/rules/local_rules.xml` confirms custom **Wazuh rule `100101`**, level `10`, group `Windows,sysmon,powershell,mitre,`, inheriting `sysmon_event1`, with PCRE2 checks for `win.eventdata.image` and `win.eventdata.commandLine`. The rule's description refers to suspicious PowerShell command-line activity and maps it to MITRE **T1059.001**. The long command-line regex is terminal-wrapped, so the screenshot alone is not treated as a complete machine-readable copy.
+
+**Evidence classification:** Rule exists on disk; alert firing and ongoing endpoint ingestion **not yet verified**. Both Windows agents were disconnected when last checked.
+
+See the [dedicated rule analysis and validation checklist](../09-detection-rules/wazuh-powershell-t1059-001.md).
+
 ## Next read-only evidence collection
 
-Inspect the local Wazuh custom rule file for the previously discussed **PowerShell / MITRE ATT&CK T1059.001** detection:
+On the manager, count occurrences of the custom rule ID in its current JSON alert log:
 
 ```bash
-sudo grep -nEi -C 5 'T1059[.]001|powershell' /var/ossec/etc/rules/local_rules.xml
+sudo grep -c '"id":"100101"' /var/ossec/logs/alerts/alerts.json
 ```
 
-This command prints only matching rule sections plus context; it does not edit the rule file. If there is no match, it does not prove a custom detection is absent: the rule might be stored in a different local file or identified with different text. Review the output for sensitive information before sharing or committing it. Do not represent disconnected agents as actively streaming endpoint telemetry.
+The result counts matching lines in that single file only; zero does not exclude older rotated or archived alerts. Do not commit unredacted alert logs.
 
 ## Security and evidence handling
 
