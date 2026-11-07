@@ -56,15 +56,29 @@ An initial command with the file path missing its leading slash failed; the corr
 - [ ] Record event time, agent, event ID, triggering command, alert details and assessment with sensitive fields redacted.
 - [ ] Evaluate false positives (legitimate admin PowerShell use) and missed detections before describing efficacy.
 
-## Follow-up read-only check
+## Step 5.5 — Alert search baseline, 7 November 2026
 
-Count mentions of this rule ID in the current JSON alerts file (a count of **matching log lines**, not proof of a current agent connection):
+The lab owner ran the recommended read-only count against the current Wazuh JSON alert file:
 
 ```bash
 sudo grep -c '"id":"100101"' /var/ossec/logs/alerts/alerts.json
 ```
 
-If the file contains no match, that is evidence only for **that particular file**, not a comprehensive historical search. Don't commit complete raw alert files or unredacted command lines.
+**Operator-reported result:** `0`.
+
+**Assessment:** No line in the *current file* matched that exact text. This is **not evidence that the rule is broken**, has never fired, or that historical/rotated alerts contain no matches. The command is a literal text search, so different JSON formatting may also affect results. The previous agent inventory reported both registered Windows agents disconnected. Do **not** describe this rule as a demonstrated live detection from the present evidence.
+
+## Next validation step
+
+Use Wazuh's interactive test utility to check loaded rules using a representative, sanitized event, without changing the deployed rules:
+
+```bash
+sudo /var/ossec/bin/wazuh-logtest
+```
+
+Collect the initial output and, in a subsequent step, feed a safe representative Sysmon process-create event. An interactive logtest match is proof of **test matching only**, not confirmation of live agent telemetry or alert generation.
+
+Do not commit complete raw alert files or unredacted endpoint command lines.
 
 See [Wazuh SIEM deployment](../05-wazuh-siem/README.md) for manager and agent inventory.
 
