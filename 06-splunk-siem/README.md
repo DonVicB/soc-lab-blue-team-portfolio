@@ -238,28 +238,42 @@ The screenshot shows four events from the **Microsoft-Windows-Windows Defender**
 
 This is independent of the two **Brave browser Sysmon** quarantine-string events from Step 6.9, which were benign-looking keyword false leads. The dedicated Defender Operational log is present on the Windows guest; earlier Splunk indexed-sourcetype inventory has **not** shown that dedicated Defender channel is forwarded to Splunk.
 
-## Step 6.11 — Next read-only metadata check: identify threat and action
+## Step 6.11 — Native Defender threat and quarantine action verified (8 November 2026)
 
-Run this in **Administrator PowerShell on the Windows 10 VM** to obtain only named metadata fields (not raw event messages or filesystem paths):
+**Evidence:** Screenshot from the Windows 10 VM's **Microsoft-Windows-Windows Defender/Operational** channel. The owner queried event IDs `1116`/`1117` on **19 October 2026** and extracted only named XML fields:
+
+- `Threat Name`: **`Trojan:Win64/SandCat.RTS!MTB`** in all four records.
+- `Severity Name`: **Severe**.
+- `Category Name`: **Trojan**.
+- `Action Name`: **Not Applicable** in the two `1116` detection records; **Quarantine** in both `1117` protection-action records.
+
+| Windows guest local time | Defender ID | Threat classification | Action name |
+| --- | --- | --- | --- |
+| **2026-10-19 00:21:06** | `1116` | `Trojan:Win64/SandCat.RTS!MTB`, Severe/Trojan | Not Applicable |
+| **2026-10-19 00:21:22** | `1117` | Same | **Quarantine** |
+| **2026-10-19 00:25:12** | `1116` | Same | Not Applicable |
+| **2026-10-19 00:25:23** | `1117` | Same | **Quarantine** |
+
+**Assessment:** Defender **detected a SandCat-labelled Trojan twice and recorded two named quarantine actions**. The matching SandCat family name is consistent with the earlier controlled CALDERA/Sandcat exercise, but the screenshot does **not** establish a binary hash, process chain, exact CALDERA operation time or successful remediation. Event `1117` and `Action Name=Quarantine` demonstrate a **recorded action**, not independently a verified action outcome. This is **native endpoint evidence**, **not yet confirmed present in Splunk's `main` index**.
+
+A proper SOC analyst must not conflate these events with the Brave browser `quarantine.mojom.Quarantine` false lead from Step 6.9.
+
+**Case-study draft:** [Microsoft Defender SandCat investigation](../10-incident-investigations/defender-sandcat-case-study.md) — facts, false leads, limitations and remaining checks.
+
+## Step 6.12 — Next read-only validation: quarantine outcome
+
+On the Windows 10 VM, use Administrator PowerShell to extract only targeted XML fields from the two `1117` action records:
 
 ```powershell
-Get-WinEvent -FilterHashtable @{LogName='Microsoft-Windows-Windows Defender/Operational'; Id=1116,1117; StartTime=[datetime]'2026-10-19 00:00:00'; EndTime=[datetime]'2026-10-19 01:00:00'} |
-  Sort-Object TimeCreated |
-  ForEach-Object {
-    $event = $_
-    $xml = [xml]$event.ToXml()
-    $details = @($xml.Event.EventData.Data |
-      Where-Object { $_.Name -match '^(Threat Name|Name|Action|Action Name|Action Status|Status|Severity Name|Category Name)$' } |
-      ForEach-Object { "$($_.Name): $($_.'#text')" })
-    [pscustomobject]@{
-      TimeCreated = $event.TimeCreated
-      EventID     = $event.Id
-      Details     = $details -join '; '
-    }
-  } | Format-List
+Get-WinEvent -FilterHashtable @{LogName='Microsoft-Windows-Windows Defender/Operational'; Id=1117; StartTime=[datetime]'2026-10-19 00:00:00'; EndTime=[datetime]'2026-10-19 01:00:00'} |
+ForEach-Object {
+  $e = $_; $xml = [xml]$e.ToXml()
+  $fields = $xml.Event.EventData.Data | Where-Object { $_.Name -match 'Threat Name|Action Name|Error Code|Error Description|Action Status' }
+  [pscustomobject]@{ Time = $e.TimeCreated; EventID = $e.Id; Details = (($fields | ForEach-Object { "$($_.Name)=$($_.'#text')" }) -join '; ') }
+} | Format-List
 ```
 
-The next result will guide a **threat-and-action-specific correlation**, distinguishing detections, completed mitigations and the unverified Sandcat association. If the `Details` field is empty, XML field names may differ; inspect field *names*, not raw potentially sensitive values. Keep unredacted screenshots containing user paths, hashes or threat-resource strings out of GitHub.
+This command is **read-only** and does not deliberately print raw messages, full paths or command lines. If no status or error fields are available, that absence should be documented rather than declaring success. Do not commit raw/unredacted screenshots.
 
 ## Future case study format
 
