@@ -126,16 +126,21 @@ Windows Administrator PowerShell displayed five recent Sysmon Operational proces
 
 See the [Windows endpoint Sysmon evidence](../04-windows-endpoint-security/README.md).
 
+## Windows 10 Wazuh agent service verification — 7 November 2026
+
+The Windows 10 guest PowerShell screenshot verifies **`WazuhSvc` (DisplayName `Wazuh`) is Running and has StartType Automatic**. This local service state does **not** prove communication with the Wazuh manager. Agent `001` (`DonW10`) had been reported **Disconnected** in an earlier manager-side inventory; a current manager-side status has not been checked.
+
+See the [Windows endpoint evidence](../04-windows-endpoint-security/README.md). Do not characterize Wazuh's live Windows telemetry as operational until agent registration/connection and event arrival are checked.
+
 ## Next evidence collection
 
-On the Windows 10 endpoint, determine the local Wazuh agent service state without changing it:
+From Windows 10, run the read-only test:
 
 ```powershell
-Get-Service | Where-Object { $_.Name -like '*Wazuh*' -or $_.DisplayName -like '*Wazuh*' } |
-  Select-Object Name, DisplayName, Status, StartType
+Test-NetConnection -ComputerName 10.10.10.20 -Port 1514
 ```
 
-This is a read-only service inventory; we will document the state before deciding whether a connection test is needed.
+Port 1514/TCP is a common Wazuh agent-event transport. `TcpTestSucceeded` only checks transport reachability; successful endpoint registration and log collection require separate proof. A negative result may reflect different agent transport settings. Do not change network settings during this documentation check.
 
 ## Security and evidence handling
 
