@@ -17,6 +17,9 @@ Deploy Wazuh as a central security monitoring platform for the VMware SOC traini
 | NAT address | `192.168.111.128/24` on `ens192` — screenshot verified |
 | Default IPv4 route | Via `192.168.111.2` on `ens192` — screenshot verified |
 | Wazuh manager service | **active** — screenshot-verified from `sudo systemctl is-active wazuh-manager`, 7 November 2026 |
+| Wazuh version | `v4.14.9` — screenshot-verified `wazuh-control info`, 7 November 2026 |
+| Wazuh revision | `rc2` — screenshot-verified |
+| Wazuh type | `server` — screenshot-verified |
 
 See [VMware network inventory](../01-lab-architecture/guest-ip-dns.md) for the detailed interface and DNS evidence.
 
@@ -35,7 +38,7 @@ sudo systemctl is-active wazuh-manager
 ## Workstreams to document
 
 - [x] Record screenshot-verified Wazuh manager service status.
-- [ ] Capture the installed Wazuh manager version.
+- [x] Capture the installed Wazuh manager version and revision — `v4.14.9`, `rc2`, `server` (7 November screenshot).
 - [x] Enumerate registered agents and their current status using the manager CLI (7 November 2026; two endpoints disconnected).
 - [ ] Document Windows 10 agent connectivity and endpoint log collection (current agent status: disconnected; do not claim live collection).
 - [ ] Document the Sysmon event source and one redacted example detection.
@@ -63,15 +66,33 @@ The first agent command omitted the leading `/` in the absolute path and resulte
 
 **Scope:** This confirms registration and connection states at the time of capture; it does **not** establish why agents were disconnected, whether they were previously connected, whether historical logs are still searchable, or whether any Sysmon detection fired recently. Record the observation without changing endpoints during documentation.
 
-## Next read-only evidence collection
+## Version verification — 7 November 2026
 
-Record the installed Wazuh version on the Ubuntu manager:
+**Evidence:** A screenshot of the Wazuh server terminal shows:
 
 ```bash
 sudo /var/ossec/bin/wazuh-control info
 ```
 
-Then document the configured agent event sources and existing PowerShell/Sysmon detection evidence separately. Do not represent these disconnected agents as actively streaming events unless a subsequent check confirms that.
+with the reported output:
+
+```text
+WAZUH_VERSION="v4.14.9"
+WAZUH_REVISION="rc2"
+WAZUH_TYPE="server"
+```
+
+These are the exact identifiers displayed by the local installation. The revision field is transcribed as `rc2` without inferring whether it is a release channel or build status. This is a **version inventory**, not a vulnerability, service-health or upgrade assessment. The same screenshot again displays `wazuh-manager` as active and Windows agent IDs `001` and `002` as disconnected.
+
+## Next read-only evidence collection
+
+Inspect the local Wazuh custom rule file for the previously discussed **PowerShell / MITRE ATT&CK T1059.001** detection:
+
+```bash
+sudo grep -nEi -C 5 'T1059[.]001|powershell' /var/ossec/etc/rules/local_rules.xml
+```
+
+This command prints only matching rule sections plus context; it does not edit the rule file. If there is no match, it does not prove a custom detection is absent: the rule might be stored in a different local file or identified with different text. Review the output for sensitive information before sharing or committing it. Do not represent disconnected agents as actively streaming endpoint telemetry.
 
 ## Security and evidence handling
 
