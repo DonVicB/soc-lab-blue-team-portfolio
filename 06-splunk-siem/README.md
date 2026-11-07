@@ -169,9 +169,9 @@ All returned rows show host `DESKTOP-2MNIK0U` in index `main`. Times are rendere
 
 **Time-range nuance:** The user was asked to select All time, but this screenshot clearly shows **Year to date**. The reported event timestamps are within that range. Do not relabel the observed query as All time.
 
-## Step 6.8 — Next step: isolate quarantine mentions
+## Step 6.8 — Quarantine terminology narrowed to two Sysmon records (8 November 2026)
 
-In Splunk Web → Search & Reporting, set **All time** and run:
+**Evidence:** Splunk Search & Reporting screenshot, selected time picker **Year to date** (1 January 2026 to 8 November 2026 around 07:12 AEDT), with this SPL:
 
 ```spl
 index=main (quarantine OR quarantined)
@@ -180,7 +180,34 @@ index=main (quarantine OR quarantined)
 | sort - count
 ```
 
-This restricts the search to quarantine-related text while keeping the output aggregated. Even if positive, matching lines are **not** proof that Defender actually quarantined a file; confirm event identifiers, provider and action details in a later *redacted* event-level check. If zero, review Defender Operational source coverage separately rather than declaring the earlier controlled incident unrecorded.
+The screenshot returns **2 matched events**, in one Statistics row:
+
+| Property | Result |
+| --- | --- |
+| Host | `DESKTOP-2MNIK0U` |
+| Index | `main` |
+| Sourcetype | `XmlWinEventLog:Microsoft-Windows-Sysmon/Operational` |
+| Matching events | **2** |
+| First seen (Splunk display) | **2026-10-18 21:24:05.213** |
+| Last seen (Splunk display) | **2026-11-05 22:32:19.528** |
+
+**Analysis:** These two records contain terms matching `quarantine` or `quarantined`. They are Sysmon telemetry records, **not yet confirmed Microsoft Defender action events**. The appearance of the terms in a command line, file path, application output or another field could produce matches without an actual quarantine. The screenshot does not show an event ID, image, parent process, threat name or Defender action status. Times reflect the Splunk display and are not independently normalized to UTC.
+
+**Time-range nuance:** The query was run **Year to date**, not the requested All time. No conclusion is drawn about data outside that selected range.
+
+## Step 6.9 — Next read-only event metadata inspection
+
+Stay in Splunk Search & Reporting. Set the time picker to **All time** and run:
+
+```spl
+index=main sourcetype="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational" (quarantine OR quarantined)
+| eval event_id=coalesce(EventCode, EventID, 'Event.System.EventID', "not_extracted")
+| eval process_image=coalesce(Image, 'EventData.Image', "not_extracted")
+| table _time host event_id process_image ParentImage
+| sort 0 _time
+```
+
+This lists the matching records' timestamps, event IDs and process-image metadata, without deliberately printing full command lines or raw event payloads. Process paths may still contain identifying directory names; redact such paths before publishing evidence. If the fields are missing, inspect the field extraction schema safely rather than presuming the records are process-creation or Defender events.
 
 ## Future case study format
 
