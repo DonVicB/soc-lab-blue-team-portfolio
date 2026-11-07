@@ -136,7 +136,7 @@ See the [Windows endpoint evidence](../04-windows-endpoint-security/README.md). 
 
 A Windows PowerShell screenshot confirms `Test-NetConnection -ComputerName 10.10.10.20 -Port 1514` returned **`TcpTestSucceeded=True`** using interface `soc nw` and source address **`10.10.10.110`**.
 
-This is evidence of a reachable **TCP listener on Wazuh server port 1514**, not proof of authenticated Wazuh agent enrollment, current manager connection, Sysmon ingestion or a working alert rule. The prior manager-side result for agent `001` (`DonW10`) was `Disconnected` and must be refreshed.
+This is evidence of a reachable **TCP listener on Wazuh server port 1514**, not proof of authenticated Wazuh agent enrollment, current manager connection, Sysmon ingestion or a working alert rule. The latest manager-side recheck at about 19:23 AEDT confirms agent `001` (`DonW10`) remains `Disconnected`, while agent `002` (`DESKTOP-2MNIK0U`) is now `Active`; the identity of the Windows 10 VM's actual registration is not yet established.
 
 **Inventory difference:** The October 24 screenshot recorded Windows internal IPv4 `10.10.10.11`; this November 7 TCP test used `10.10.10.110`. The discrepancy is captured rather than silently overwriting the original VM inventory. Additional `Get-NetIPAddress` evidence would be needed to know whether the address was replaced or added.
 
@@ -144,15 +144,29 @@ See the [Windows endpoint evidence and test output](../04-windows-endpoint-secur
 
 ## Next evidence collection
 
-Recheck registered Wazuh agent states on the Ubuntu manager:
+On the Windows 10 SOC client, run `hostname` and compare it with the manager's two registered agent names before diagnosing a connectivity issue. Even if names match, Wazuh agent registration ID and event ingestion must still be verified separately.
+
+
+
+## Step 5.11 — Manager-side agent recheck (7 November 2026, approximately 19:23 AEDT)
+
+**Evidence:** A new Ubuntu Wazuh VM screenshot includes the output of:
 
 ```bash
 sudo /var/ossec/bin/agent_control -l
 ```
 
-If agent `001` remains disconnected, document it as a **Wazuh session/agent issue despite successful TCP reachability**, and avoid claiming that endpoint events are flowing. Do not change agent or network settings during this documentation check.
+| ID | Registered name | Manager-reported status |
+| --- | --- | --- |
+| `000` | `wazuh-server` | **Active/Local** |
+| `001` | `DonW10` | **Disconnected** |
+| `002` | `DESKTOP-2MNIK0U` | **Active** |
 
+**Change from earlier on 7 November:** Agent `002` has transitioned from **Disconnected to Active**, so **1 of 2 non-manager registered agents** is currently connected. Agent `001` remains Disconnected. The local manager entry `000` is not counted as a Windows endpoint.
 
+The Windows 10 VM's own `WazuhSvc` service had already been shown running (Automatic), and a PowerShell TCP probe reached `10.10.10.20:1514`. Those results do not identify which registered agent corresponds to the current Windows 10 VM; `DonW10` may be an older or differently named registration. **Do not infer that the tested Windows VM is disconnected or that its Sysmon data is being ingested until the guest's identity is matched to agent `001` or `002`.**
+
+**Next read-only identity check:** On the actual Windows 10 SOC client, run `hostname`, compare the returned hostname with registered names, then correlate with the Wazuh agent configuration if the names differ. No agent IDs, registrations or networking settings were changed in this documentation step.
 
 ## Security and evidence handling
 
