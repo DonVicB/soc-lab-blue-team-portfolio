@@ -19,7 +19,7 @@ The goal is to make each exercise repeatable and explain **what happened, how it
 | Windows 10 endpoint | Workstation and security telemetry | [Windows endpoint evidence](04-windows-endpoint-security/README.md): Sysmon process creation and active Wazuh agent verified |
 | Sysmon (System Monitor) | Detailed Windows endpoint events | [Source and Wazuh process-creation alert evidence](04-windows-endpoint-security/README.md): 60 parsed Sysmon Event ID 1 manager alerts |
 | Wazuh | Security information and event management (SIEM), alerts and rules | [Manager and detection evidence](05-wazuh-siem/README.md): active agent `002`, 60 parsed Sysmon Event ID 1 alerts across six rules; custom rule `100101` unverified |
-| Splunk | Security log searches and investigations | [Indexed Windows/Sysmon telemetry and investigation searches documented](06-splunk-siem/README.md): 29,337 events/24h, 1,408 broad keyword matches, 0 narrow CALDERA keyword matches (8 Nov 2026); quarantine conclusion pending |
+| Splunk | Security log searches and investigations | [Windows/Sysmon searches and Defender event pivot documented](06-splunk-siem/README.md): native Defender log shows two `1116` detections and two `1117` action records; threat identity/quarantine/Sandcat link pending |
 | Kali Linux | Authorised attack simulation | To document |
 | MITRE CALDERA | Adversary emulation | Setup / validation to document |
 | Wireshark | Network traffic analysis | To document |
@@ -46,7 +46,7 @@ The inventory and configurations will be checked against the current virtual mac
 - [Wazuh SIEM deployment and verification](05-wazuh-siem/README.md) — active Windows agent `002`, 60 parsed Sysmon Event ID 1 alert records; custom PowerShell rule `100101` not yet validated.
 - [Detection engineering index](09-detection-rules/README.md) — PowerShell rule `100101`, MITRE T1059.001, configuration verified; alert validation pending.
 - [Windows 10 endpoint security](04-windows-endpoint-security/README.md) — local Sysmon Event ID 1 and manager alert evidence verified.
-- [Splunk SIEM search and investigation plan](06-splunk-siem/README.md) — stored main-index events, seven Windows sourcetypes, and initial Defender/CALDERA keyword searches verified; event-ID investigation next.
+- [Splunk SIEM search and investigation plan](06-splunk-siem/README.md) — Windows/Sysmon ingestion and broad-search false leads documented; native Defender `1116`/`1117` evidence found, action metadata correlation next.
 
 ## Planned repository structure
 
