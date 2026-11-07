@@ -144,13 +144,7 @@ See the [Windows endpoint evidence and test output](../04-windows-endpoint-secur
 
 ## Next evidence collection
 
-On the Ubuntu Wazuh manager, run:
-
-```bash
-sudo /var/ossec/bin/agent_control -i 002
-```
-
-Inspect the active registration's manager-side details. This is read-only; event forwarding and Sysmon ingestion must be verified independently.
+Agent `002` details are now screenshot-verified. Next, use the **read-only current alert-file count** documented in Step 5.13 to look for evidence of alerts attributed to this agent, keeping those results distinct from Sysmon ingestion.
 
 
 
@@ -189,6 +183,40 @@ This is an **exact string match** with the manager's agent ID `002` registration
 **Interpretation:** The selected Windows 10 VM is very likely the endpoint represented by active registration `002`, rather than registration `001`. The matching hostname is strong correlating evidence but does not independently expose the local agent's registration ID, authenticate that registration, or establish whether Wazuh is ingesting Sysmon Event ID 1 from it. Do not delete or re-enroll `DonW10` based on this name match alone.
 
 **Next evidence:** On Ubuntu Wazuh, run the **read-only** command `sudo /var/ossec/bin/agent_control -i 002` to review the active registration's manager-side details. A later alert query is required to demonstrate real endpoint telemetry.
+
+## Step 5.13 — Agent `002` details corroborated (7 November 2026, approximately 21:03 AEDT)
+
+**Evidence:** Ubuntu Wazuh manager terminal screenshot from:
+
+```bash
+sudo /var/ossec/bin/agent_control -i 002
+```
+
+| Property | Manager-reported value |
+| --- | --- |
+| Agent ID | `002` |
+| Agent Name | `DESKTOP-2MNIK0U` |
+| Registered IP criterion | `any` |
+| Status | **Active** |
+| Operating system | **Microsoft Windows 10 Pro** |
+| Agent client version | **Wazuh v4.14.9** |
+| Syscheck | Start and completion timestamps present (7 November 2026) |
+
+The manager-side agent name matches the Windows 10 VM's screenshot-verified `hostname` result. The manager also reports a Windows 10 Pro agent client, consistent with the guest. Combined, these observations **strongly corroborate that agent `002` represents the current Windows 10 lab VM**. The earlier `DonW10` agent ID `001` remains a separate disconnected registration. The `any` registered IP setting does **not** disclose or prove a particular current endpoint IP.
+
+Configuration and shared-file hashes shown in the console are intentionally **not** transcribed to the portfolio. The screenshot's syscheck timestamps indicate integrity-check activity was recorded; they do not independently verify that Windows Sysmon Event ID 1 telemetry reached the manager.
+
+**Status:** Manager-side connection and identity corroborated, **Sysmon event ingestion and custom PowerShell rule `100101` still not verified**. Do not state that a full detection pipeline has been demonstrated.
+
+## Next read-only verification — incoming alert records for agent 002
+
+On the Ubuntu Wazuh manager:
+
+```bash
+sudo grep -c '"id":"002"' /var/ossec/logs/alerts/alerts.json
+```
+
+The result is the number of lines with this literal agent-ID fragment in the **current JSON alert file**. A positive count would support that alerts associated with `002` exist (not necessarily Sysmon alerts or real-time ingestion), while `0` could also be explained by retention, rule thresholds, a different JSON formatting style, or logs residing elsewhere. Do not post raw alerts without redaction.
 
 ## Security and evidence handling
 
