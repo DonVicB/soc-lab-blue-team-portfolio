@@ -93,16 +93,27 @@ A screenshot of the corrected grep command against `/var/ossec/etc/rules/local_r
 
 See the [dedicated rule analysis and validation checklist](../09-detection-rules/wazuh-powershell-t1059-001.md).
 
-## Next read-only evidence collection
+## Alert search result — 7 November 2026
 
-On the manager, count occurrences of the custom rule ID in its current JSON alert log:
+The lab owner reports that the current-file search for custom rule `100101`:
 
 ```bash
 sudo grep -c '"id":"100101"' /var/ossec/logs/alerts/alerts.json
 ```
 
-The result counts matching lines in that single file only; zero does not exclude older rotated or archived alerts. Do not commit unredacted alert logs.
+returned **`0`**. This means no lines in the current JSON alert file matched the exact text. It is **not** proof that the custom rule has never fired, is broken, or that older/rotated alert files contain no matching alerts. The manager was active but both registered Windows agents were disconnected during the earlier service inventory.
 
+See [rule `100101` evidence and validation](../09-detection-rules/wazuh-powershell-t1059-001.md) for limitations.
+
+## Next evidence collection
+
+Run Wazuh's interactive rule test to see whether the local rule is loaded and can match a sanitized sample:
+
+```bash
+sudo /var/ossec/bin/wazuh-logtest
+```
+
+This does not modify the deployed rule. A successful simulated match still needs to be distinguished from live endpoint event ingestion.
 ## Security and evidence handling
 
 Do not commit authentication credentials, agent registration keys, certificates/private keys, raw endpoint logs containing personal information or full configuration exports. Lab IPs are included here for private inventory; review them before publishing the repository publicly.
