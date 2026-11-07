@@ -88,15 +88,18 @@ Test-NetConnection -ComputerName 10.10.10.20 -Port 1514
 
 **Address discrepancy to reconcile:** The October 24 screenshot of Windows `ipconfig /all` recorded internal `10.10.10.11/24` (Ethernet1). This November 7 connection check explicitly used `10.10.10.110` as its **source** on interface alias `soc nw`. This is an observed change/difference, but the evidence does not establish whether the original IP was replaced, additional addresses were assigned, or the interface configuration changed. Do **not** overwrite the historical inventory without an updated `Get-NetIPAddress` result. No network settings were changed in this step.
 
-## Next targeted read-only check — manager-side Wazuh agent status
+## Step 5.11 — Updated manager-side agent states (7 November 2026, approximately 19:23 AEDT)
 
-On the Ubuntu Wazuh VM, run:
+The manager's latest `sudo /var/ossec/bin/agent_control -l` screenshot reports:
 
-```bash
-sudo /var/ossec/bin/agent_control -l
-```
+- `001` — `DonW10`: **Disconnected**
+- `002` — `DESKTOP-2MNIK0U`: **Active**
 
-Confirm whether Windows agent ID `001` (`DonW10`) now appears Active or remains Disconnected. This provides the manager's current reported status, distinct from a successful TCP test.
+The earlier manager-side check had both Windows agents Disconnected. **One of two registered Windows agents is now Active.** This is not yet proof which registration belongs to this Windows 10 VM. `WazuhSvc` is running on the Windows VM and TCP port `1514` on `10.10.10.20` was reachable, but neither test establishes the guest's Wazuh agent ID or actual ingestion.
+
+**Next targeted read-only step:** Run `hostname` inside the `W.10.Pro_Soc-Lab Client` VM to compare the local computer name with the registered names above. If the result is different, further agent identity verification may be necessary; do not blindly re-enroll or delete agents.
+
+
 
 
 
@@ -106,7 +109,7 @@ Confirm whether Windows agent ID `001` (`DonW10`) now appears Active or remains 
 - [x] Record local log's total record count from the screenshot.
 - [x] Confirm five recent Sysmon Event ID 1 process-creation records (7 November 2026; screenshot-verified).
 - [x] Confirm local Windows Wazuh agent service `WazuhSvc` is running and Automatic (7 November screenshot).
-- [ ] Validate Windows Wazuh agent connectivity and log collection (manager previously reported disconnected).
+- [ ] Validate Windows Wazuh agent identity, connectivity and log collection (agent `001` disconnected; agent `002` active in 7 Nov recheck; VM-to-agent mapping pending).
 - [ ] Correlate a controlled, redacted Sysmon process event with Wazuh rule `100101` or document why it does not fire.
 
 See [Wazuh SIEM](../05-wazuh-siem/README.md) and [PowerShell detection rule analysis](../09-detection-rules/wazuh-powershell-t1059-001.md).
