@@ -216,20 +216,50 @@ The XML identifies the **Microsoft-Windows-Sysmon** provider; the `Image`, `Orig
 
 **Evidence hygiene:** The browser screenshot contains host/account paths, browser tabs, process command lines and hashes. Do not commit that unredacted image. Only minimal sanitized metadata and the conclusion above are retained here.
 
-## Step 6.10 — Next verification: actual Microsoft Defender detections
+## Step 6.10 — Native Defender detection and action events located (8 November 2026)
 
-The correct next evidence source is the Windows 10 guest's native **Microsoft-Windows-Windows Defender/Operational** channel, rather than more keyword searches against Brave command lines.
-
-Run this read-only PowerShell query inside the **Windows 10 SOC lab VM**:
+**Evidence:** Screenshot from the **actual Windows 10 SOC lab VM**, Administrator PowerShell, running the following read-only query:
 
 ```powershell
 Get-WinEvent -FilterHashtable @{LogName='Microsoft-Windows-Windows Defender/Operational'; Id=1116,1117,1118,1119} -MaxEvents 30 |
   Select-Object TimeCreated, Id, ProviderName
 ```
 
-According to [Microsoft's event reference](https://learn.microsoft.com/en-us/defender-endpoint/troubleshoot-microsoft-defender-antivirus), Event ID `1116` denotes a malware/PUA detection, `1117` an action taken, and `1118`/`1119` unsuccessful action attempts. The command shows only timestamps, event IDs and providers—not threat messages, file paths or account details. A `1117` record must still be inspected (safely) to confirm the **specific action was quarantine** rather than clean/remove/allow.
+The screenshot shows four events from the **Microsoft-Windows-Windows Defender** provider, all on **19 October 2026** (Windows local time as displayed):
 
-**Caveat:** If no events match or the log is inaccessible, PowerShell may return an error. That would require checking the channel's availability/retention rather than concluding that Defender never detected Sandcat. Event evidence must be correlated to the controlled CALDERA exercise before closing the case study.
+| Time (Windows display) | Event ID | Supported interpretation |
+| --- | --- | --- |
+| 00:21:06 | `1116` | Defender detected a threat |
+| 00:21:22 | `1117` | Defender recorded an action |
+| 00:25:12 | `1116` | Defender detected a threat |
+| 00:25:23 | `1117` | Defender recorded an action |
+
+**Assessment:** This confirms at least **two Defender threat detection event records and two corresponding action event records**, grouped by time, on the real endpoint. The screenshot does **not** reveal threat names, action types, action results, affected paths, or whether either detection was related to the earlier **CALDERA Sandcat** lab exercise. Consequently, **do not label these as confirmed quarantine actions** until the `1117` action details and detection correlation are examined.
+
+This is independent of the two **Brave browser Sysmon** quarantine-string events from Step 6.9, which were benign-looking keyword false leads. The dedicated Defender Operational log is present on the Windows guest; earlier Splunk indexed-sourcetype inventory has **not** shown that dedicated Defender channel is forwarded to Splunk.
+
+## Step 6.11 — Next read-only metadata check: identify threat and action
+
+Run this in **Administrator PowerShell on the Windows 10 VM** to obtain only named metadata fields (not raw event messages or filesystem paths):
+
+```powershell
+Get-WinEvent -FilterHashtable @{LogName='Microsoft-Windows-Windows Defender/Operational'; Id=1116,1117; StartTime=[datetime]'2026-10-19 00:00:00'; EndTime=[datetime]'2026-10-19 01:00:00'} |
+  Sort-Object TimeCreated |
+  ForEach-Object {
+    $event = $_
+    $xml = [xml]$event.ToXml()
+    $details = @($xml.Event.EventData.Data |
+      Where-Object { $_.Name -match '^(Threat Name|Name|Action|Action Name|Action Status|Status|Severity Name|Category Name)$' } |
+      ForEach-Object { "$($_.Name): $($_.'#text')" })
+    [pscustomobject]@{
+      TimeCreated = $event.TimeCreated
+      EventID     = $event.Id
+      Details     = $details -join '; '
+    }
+  } | Format-List
+```
+
+The next result will guide a **threat-and-action-specific correlation**, distinguishing detections, completed mitigations and the unverified Sandcat association. If the `Details` field is empty, XML field names may differ; inspect field *names*, not raw potentially sensitive values. Keep unredacted screenshots containing user paths, hashes or threat-resource strings out of GitHub.
 
 ## Future case study format
 
