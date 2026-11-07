@@ -136,7 +136,7 @@ See the [Windows endpoint evidence](../04-windows-endpoint-security/README.md). 
 
 A Windows PowerShell screenshot confirms `Test-NetConnection -ComputerName 10.10.10.20 -Port 1514` returned **`TcpTestSucceeded=True`** using interface `soc nw` and source address **`10.10.10.110`**.
 
-This is evidence of a reachable **TCP listener on Wazuh server port 1514**, not proof of authenticated Wazuh agent enrollment, current manager connection, Sysmon ingestion or a working alert rule. The latest manager-side recheck at about 19:23 AEDT confirms agent `001` (`DonW10`) remains `Disconnected`, while agent `002` (`DESKTOP-2MNIK0U`) is now `Active`; the identity of the Windows 10 VM's actual registration is not yet established.
+This is evidence of a reachable **TCP listener on Wazuh server port 1514**, not proof of authenticated Wazuh agent enrollment, current manager connection, Sysmon ingestion or a working alert rule. The latest manager-side recheck at about 19:23 AEDT confirms agent `001` (`DonW10`) remains `Disconnected`, while agent `002` (`DESKTOP-2MNIK0U`) is now `Active`; the Windows 10 VM hostname was subsequently observed as `DESKTOP-2MNIK0U`, matching the active registration; agent ID and actual event ingestion remain to be corroborated.
 
 **Inventory difference:** The October 24 screenshot recorded Windows internal IPv4 `10.10.10.11`; this November 7 TCP test used `10.10.10.110`. The discrepancy is captured rather than silently overwriting the original VM inventory. Additional `Get-NetIPAddress` evidence would be needed to know whether the address was replaced or added.
 
@@ -144,7 +144,13 @@ See the [Windows endpoint evidence and test output](../04-windows-endpoint-secur
 
 ## Next evidence collection
 
-On the Windows 10 SOC client, run `hostname` and compare it with the manager's two registered agent names before diagnosing a connectivity issue. Even if names match, Wazuh agent registration ID and event ingestion must still be verified separately.
+On the Ubuntu Wazuh manager, run:
+
+```bash
+sudo /var/ossec/bin/agent_control -i 002
+```
+
+Inspect the active registration's manager-side details. This is read-only; event forwarding and Sysmon ingestion must be verified independently.
 
 
 
@@ -167,6 +173,22 @@ sudo /var/ossec/bin/agent_control -l
 The Windows 10 VM's own `WazuhSvc` service had already been shown running (Automatic), and a PowerShell TCP probe reached `10.10.10.20:1514`. Those results do not identify which registered agent corresponds to the current Windows 10 VM; `DonW10` may be an older or differently named registration. **Do not infer that the tested Windows VM is disconnected or that its Sysmon data is being ingested until the guest's identity is matched to agent `001` or `002`.**
 
 **Next read-only identity check:** On the actual Windows 10 SOC client, run `hostname`, compare the returned hostname with registered names, then correlate with the Wazuh agent configuration if the names differ. No agent IDs, registrations or networking settings were changed in this documentation step.
+
+## Step 5.12 — Windows hostname matched to active Wazuh agent (7 November 2026, approximately 19:26 AEDT)
+
+**Evidence:** Screenshot from the selected VMware `W.10.Pro_Soc-Lab Client` guest in Administrator PowerShell:
+
+```powershell
+hostname
+```
+
+**Returned:** `DESKTOP-2MNIK0U`.
+
+This is an **exact string match** with the manager's agent ID `002` registration, which was shown as **Active** at approximately 19:23 AEDT. The separate `DonW10` registration, ID `001`, remained Disconnected.
+
+**Interpretation:** The selected Windows 10 VM is very likely the endpoint represented by active registration `002`, rather than registration `001`. The matching hostname is strong correlating evidence but does not independently expose the local agent's registration ID, authenticate that registration, or establish whether Wazuh is ingesting Sysmon Event ID 1 from it. Do not delete or re-enroll `DonW10` based on this name match alone.
+
+**Next evidence:** On Ubuntu Wazuh, run the **read-only** command `sudo /var/ossec/bin/agent_control -i 002` to review the active registration's manager-side details. A later alert query is required to demonstrate real endpoint telemetry.
 
 ## Security and evidence handling
 
