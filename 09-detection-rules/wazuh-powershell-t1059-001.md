@@ -68,6 +68,14 @@ sudo grep -c '"id":"100101"' /var/ossec/logs/alerts/alerts.json
 
 **Assessment:** No line in the *current file* matched that exact text. This is **not evidence that the rule is broken**, has never fired, or that historical/rotated alerts contain no matches. The command is a literal text search, so different JSON formatting may also affect results. The previous agent inventory reported both registered Windows agents disconnected. Do **not** describe this rule as a demonstrated live detection from the present evidence.
 
+## Step 5.6 — Interactive Wazuh Logtest launched, 7 November 2026
+
+A screenshot of the Ubuntu Wazuh VM confirms that `sudo /var/ossec/bin/wazuh-logtest` started successfully as version `v4.14.9` and printed `Type one log per line`. **No test event or matching rule output has been supplied yet.** A running test tool is not evidence that custom rule `100101` fired.
+
+**Important tool limitation:** Standard Windows Sysmon EventChannel events use Wazuh's internal `windows_eventchannel` decoder. Pasting their reconstructed JSON form into CLI `wazuh-logtest` ordinarily invokes the `json` decoder and may not traverse the normal `60000` → `60004` → `61600` → `61603` parent-rule path needed by `<if_group>sysmon_event1</if_group>`. Therefore a negative interactive JSON test is **inconclusive** for live Windows EventChannel detection. Do not modify `0575-win-base_rules.xml` just to force a passing test in the running manager. Wazuh's built-in decoder behavior and this issue are documented in project discussions and ruleset files.
+
+**Next:** Safely feed one synthetic Sysmon Event 1 JSON record into the interactive tool to observe decoding and rule evaluation, label any result **simulated**, and distinguish JSON test limitations from agent ingestion. Reconnect/validate Windows agents and use a real Sysmon event only as a separate controlled exercise.
+
 ## Next validation step
 
 Use Wazuh's interactive test utility to check loaded rules using a representative, sanitized event, without changing the deployed rules:
