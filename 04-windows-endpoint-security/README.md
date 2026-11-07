@@ -27,22 +27,43 @@ Get-WinEvent -ListLog 'Microsoft-Windows-Sysmon/Operational' | Select-Object Log
 
 **Known separate limitation:** The Wazuh manager previously reported agent ID `001` (`DonW10`) disconnected, as well as one other Windows endpoint. A healthy local log does **not** establish that Wazuh is receiving those records. The custom Wazuh PowerShell rule `100101` (ATT&CK `T1059.001`) was observed on disk, but has not generated a verified match in the evidence collected so far.
 
-## Next read-only collection
+## Step 5.8 — Sysmon Event ID 1 process-creation evidence (7 November 2026)
 
-Inspect the five most recent Sysmon **Event ID 1** process-creation records without printing full command-line contents or other sensitive message fields:
+**Evidence:** Administrator PowerShell screenshot from the selected Windows 10 VM running:
 
 ```powershell
 Get-WinEvent -FilterHashtable @{LogName='Microsoft-Windows-Sysmon/Operational'; Id=1} -MaxEvents 5 |
   Select-Object TimeCreated, Id, ProviderName
 ```
 
-This is a basic event-source verification; the results must be reviewed before any screenshots or unredacted logs are shared or committed.
+| TimeCreated (Windows guest local time) | Event ID | ProviderName |
+| --- | --- | --- |
+| 2026-11-07 14:59:37 | `1` | `Microsoft-Windows-Sysmon` |
+| 2026-11-07 14:59:11 | `1` | `Microsoft-Windows-Sysmon` |
+| 2026-11-07 14:59:01 | `1` | `Microsoft-Windows-Sysmon` |
+| 2026-11-07 14:58:50 | `1` | `Microsoft-Windows-Sysmon` |
+| 2026-11-07 14:58:42 | `1` | `Microsoft-Windows-Sysmon` |
+
+**Assessment:** This confirms the Windows endpoint recorded five recent Sysmon process-creation events (Event ID `1`) and the latest visible record is from `14:59:37`. The earlier `33,076` count is **all** Sysmon Operational records, not an Event ID `1` count. This screenshot contains metadata only: it does **not** show the process image, full command line, whether an event is suspicious, whether data was forwarded to Wazuh, or whether custom rule `100101` generated an alert.
+
+The same screenshot has unrelated ping results, but these are outside the present Sysmon evidence milestone and were not interpreted as verification of Wazuh transport.
+
+## Next read-only evidence collection — Windows Wazuh agent service
+
+In the Windows 10 PowerShell terminal, check the local service status:
+
+```powershell
+Get-Service | Where-Object { $_.Name -like '*Wazuh*' -or $_.DisplayName -like '*Wazuh*' } |
+  Select-Object Name, DisplayName, Status, StartType
+```
+
+This does not change any services. An empty result would indicate no matching service name was returned, not by itself prove that a Wazuh agent is absent. Correlate it later with the server agent list.
 
 ## Next portfolio milestones
 
 - [x] Confirm Sysmon Operational log exists and is enabled.
 - [x] Record local log's total record count from the screenshot.
-- [ ] Confirm recent Sysmon Event ID 1 process-creation records.
+- [x] Confirm five recent Sysmon Event ID 1 process-creation records (7 November 2026; screenshot-verified).
 - [ ] Validate Windows Wazuh agent connectivity and log collection.
 - [ ] Correlate a controlled, redacted Sysmon process event with Wazuh rule `100101` or document why it does not fire.
 
