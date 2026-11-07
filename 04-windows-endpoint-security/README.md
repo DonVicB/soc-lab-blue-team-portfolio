@@ -68,15 +68,37 @@ Get-Service | Where-Object { $_.Name -like '*Wazuh*' -or $_.DisplayName -like '*
 
 The screenshot also contains prior ICMP tests, but this step only documents the Windows service state to avoid unrelated network troubleshooting.
 
-## Next targeted read-only check
+## Step 5.10 — TCP connectivity to Wazuh server (7 November 2026)
 
-Verify TCP reachability from the Windows client to the Wazuh server's typical agent-event endpoint (port 1514):
+**Evidence:** Windows 10 Administrator PowerShell screenshot of the read-only command:
 
 ```powershell
 Test-NetConnection -ComputerName 10.10.10.20 -Port 1514
 ```
 
-Record `TcpTestSucceeded` as observed. A negative TCP test alone does **not** prove the Wazuh agent is misconfigured: a different listener port or UDP protocol could be in use. A positive test confirms only a reachable TCP listener, not successful agent registration or event ingestion. No firewall or agent settings should be changed as part of this evidence check.
+| Output field | Screenshot-verified result |
+| --- | --- |
+| ComputerName / RemoteAddress | `10.10.10.20` |
+| RemotePort | `1514` |
+| InterfaceAlias | `soc nw` |
+| SourceAddress | **`10.10.10.110`** |
+| TcpTestSucceeded | **`True`** |
+
+**Interpretation:** The Windows endpoint established a TCP connection to the Wazuh server IP on port `1514` at capture time. This proves a reachable **TCP listener**, but does **not** prove the Wazuh agent is connected or authenticated with the manager, that a Wazuh process owns the listener, or that the Sysmon Operational log is being ingested.
+
+**Address discrepancy to reconcile:** The October 24 screenshot of Windows `ipconfig /all` recorded internal `10.10.10.11/24` (Ethernet1). This November 7 connection check explicitly used `10.10.10.110` as its **source** on interface alias `soc nw`. This is an observed change/difference, but the evidence does not establish whether the original IP was replaced, additional addresses were assigned, or the interface configuration changed. Do **not** overwrite the historical inventory without an updated `Get-NetIPAddress` result. No network settings were changed in this step.
+
+## Next targeted read-only check — manager-side Wazuh agent status
+
+On the Ubuntu Wazuh VM, run:
+
+```bash
+sudo /var/ossec/bin/agent_control -l
+```
+
+Confirm whether Windows agent ID `001` (`DonW10`) now appears Active or remains Disconnected. This provides the manager's current reported status, distinct from a successful TCP test.
+
+
 
 ## Next portfolio milestones
 
