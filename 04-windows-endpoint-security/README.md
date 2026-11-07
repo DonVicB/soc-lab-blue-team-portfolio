@@ -48,23 +48,43 @@ Get-WinEvent -FilterHashtable @{LogName='Microsoft-Windows-Sysmon/Operational'; 
 
 The same screenshot has unrelated ping results, but these are outside the present Sysmon evidence milestone and were not interpreted as verification of Wazuh transport.
 
-## Next read-only evidence collection — Windows Wazuh agent service
+## Step 5.9 — Windows Wazuh agent service status (7 November 2026)
 
-In the Windows 10 PowerShell terminal, check the local service status:
+**Evidence:** Administrator PowerShell screenshot from the selected Windows 10 lab VM after running:
 
 ```powershell
 Get-Service | Where-Object { $_.Name -like '*Wazuh*' -or $_.DisplayName -like '*Wazuh*' } |
   Select-Object Name, DisplayName, Status, StartType
 ```
 
-This does not change any services. An empty result would indicate no matching service name was returned, not by itself prove that a Wazuh agent is absent. Correlate it later with the server agent list.
+| Property | Screenshot-verified result |
+| --- | --- |
+| Service Name | `WazuhSvc` |
+| DisplayName | `Wazuh` |
+| Status | **Running** |
+| StartType | **Automatic** |
+
+**Assessment:** The Windows Wazuh agent service is installed, running, and set to start automatically. This is **local Windows service state**, not confirmation of a session with the Wazuh manager or successful Sysmon event forwarding. At the earlier manager-side check on 7 November, registered agent `001` (`DonW10`) was **Disconnected**. The checks occurred at different times; the manager has **not yet been rechecked** after this service screenshot.
+
+The screenshot also contains prior ICMP tests, but this step only documents the Windows service state to avoid unrelated network troubleshooting.
+
+## Next targeted read-only check
+
+Verify TCP reachability from the Windows client to the Wazuh server's typical agent-event endpoint (port 1514):
+
+```powershell
+Test-NetConnection -ComputerName 10.10.10.20 -Port 1514
+```
+
+Record `TcpTestSucceeded` as observed. A negative TCP test alone does **not** prove the Wazuh agent is misconfigured: a different listener port or UDP protocol could be in use. A positive test confirms only a reachable TCP listener, not successful agent registration or event ingestion. No firewall or agent settings should be changed as part of this evidence check.
 
 ## Next portfolio milestones
 
 - [x] Confirm Sysmon Operational log exists and is enabled.
 - [x] Record local log's total record count from the screenshot.
 - [x] Confirm five recent Sysmon Event ID 1 process-creation records (7 November 2026; screenshot-verified).
-- [ ] Validate Windows Wazuh agent connectivity and log collection.
+- [x] Confirm local Windows Wazuh agent service `WazuhSvc` is running and Automatic (7 November screenshot).
+- [ ] Validate Windows Wazuh agent connectivity and log collection (manager previously reported disconnected).
 - [ ] Correlate a controlled, redacted Sysmon process event with Wazuh rule `100101` or document why it does not fire.
 
 See [Wazuh SIEM](../05-wazuh-siem/README.md) and [PowerShell detection rule analysis](../09-detection-rules/wazuh-powershell-t1059-001.md).
