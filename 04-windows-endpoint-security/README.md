@@ -201,6 +201,24 @@ sudo grep '"id":"002"' /var/ossec/logs/alerts/alerts.json | grep -i 'Microsoft-W
 
 **Next:** Aggregate the Wazuh `rule.id` values for those Sysmon process-creation alerts without printing unredacted process command lines. See [Wazuh SIEM](../05-wazuh-siem/README.md) for evidence progression and source limits.
 
+## Step 5.17 — Parsed Wazuh Sysmon process-creation alerts (7 November 2026)
+
+A Python `json.loads`/Counter analysis of the Wazuh manager's current `alerts.json` (screenshot verified) filtered on agent `002`, the Sysmon provider and Windows Event ID `1`, and returned **60 parsed JSON alert records** across the following Wazuh rule IDs:
+
+| Wazuh rule ID | Alerts |
+| --- | ---: |
+| `92052` | 25 |
+| `92032` | 14 |
+| `92021` | 8 |
+| `92066` | 8 |
+| `92031` | 4 |
+| `92055` | 1 |
+| **Total** | **60** |
+
+This completes the **source-to-Wazuh process-creation alert evidence** milestone. The descriptions of these six Wazuh rules were not collected, and no alert triage outcome is claimed. The separate custom PowerShell detection `100101` is not represented in this 60-alert subset; validate it independently if required.
+
+See [Wazuh baseline details](../05-wazuh-siem/README.md).
+
 ## Next portfolio milestones
 
 - [x] Confirm Sysmon Operational log exists and is enabled.
@@ -211,6 +229,7 @@ sudo grep '"id":"002"' /var/ossec/logs/alerts/alerts.json | grep -i 'Microsoft-W
 - [x] Corroborate Windows VM identity and active Wazuh registration `002` using manager-side OS and version details (7 November 2026 screenshot).
 - [x] Verify Sysmon-provider alert-file line matches for active agent `002`: 148 (7 November 2026; operator-reported grep result).
 - [x] Find agent `002` + Sysmon provider + Event ID `1` in Wazuh's current alert file: 60 matching lines (7 November 2026; user-reported).
+- [x] Parse Sysmon Event ID `1` manager alerts and identify six actual Wazuh rule IDs across 60 records (7 November screenshot).
 - [ ] Correlate a controlled, redacted Sysmon process event with Wazuh rule `100101` or document why it does not fire.
 
 See [Wazuh SIEM](../05-wazuh-siem/README.md) and [PowerShell detection rule analysis](../09-detection-rules/wazuh-powershell-t1059-001.md).
