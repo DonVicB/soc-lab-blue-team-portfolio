@@ -382,6 +382,12 @@ The visible `ipconfig /all` output reports **IP Routing Enabled: No**. Its visib
 
 **Scope:** This is a configuration transcription for the GitHub portfolio. No guest network changes were made and no raw screenshots, MAC addresses, or IPv6 host identifiers were committed.
 
+### Later Windows 10 connectivity-source address — 7 November 2026
+
+A subsequent Windows PowerShell `Test-NetConnection -ComputerName 10.10.10.20 -Port 1514` screenshot shows `SourceAddress=10.10.10.110` on interface `soc nw`, with `TcpTestSucceeded=True`. This differs from the **24 October** `ipconfig /all` screenshot recording `Ethernet1=10.10.10.11/24`.
+
+**Evidence limit:** A connection test shows the address Windows selected for that connection; it does not list all assigned IPs or explain a configuration change. Therefore, the October verified snapshot is preserved, and the November source-address observation is recorded as a **later discrepancy requiring fresh adapter inventory** rather than an unqualified replacement. See [Windows endpoint evidence](../04-windows-endpoint-security/README.md). No change to VMware networking was made.
+
 ## Ubuntu Wazuh — IPv4 interface inventory
 
 > **Evidence:** VMware Workstation `Ubuntu Wazuh` selected, showing Linux console output of `ip -br -4 addr` on **24 October 2026 (approximately 4:52 PM, Melbourne time)**. No raw screenshot is stored in the repository.
