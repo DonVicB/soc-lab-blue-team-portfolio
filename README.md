@@ -18,7 +18,7 @@ The goal is to make each exercise repeatable and explain **what happened, how it
 | Windows Server 2019 / Active Directory Domain Services | Identity management, domain controller, DNS, users and groups | To document |
 | Windows 10 endpoint | Domain-joined workstation and security telemetry | To document |
 | Sysmon (System Monitor) | Detailed Windows endpoint events | To document |
-| Wazuh | Security information and event management (SIEM), alerts and rules | To document |
+| Wazuh | Security information and event management (SIEM), alerts and rules | [Deployment documentation started](05-wazuh-siem/README.md): manager active (owner-reported), agents pending |
 | Splunk | Security log searches and investigations | Setup / validation to document |
 | Kali Linux | Authorised attack simulation | To document |
 | MITRE CALDERA | Adversary emulation | Setup / validation to document |
@@ -42,7 +42,8 @@ The inventory and configurations will be checked against the current virtual mac
 
 ## Lab architecture documentation
 
-- [VMware SOC lab architecture — preliminary inventory and verification plan](01-lab-architecture/README.md). These network values were recorded previously and still require live validation.
+- [VMware SOC lab architecture](01-lab-architecture/README.md) — all eight guest internal IPv4 addresses documented from live evidence; some routing/DNS and Metasploitable3 isolation remain to verify.
+- [Wazuh SIEM deployment and verification](05-wazuh-siem/README.md) — manager service reported active on 7 November 2026; agent and detection evidence collection in progress.
 
 ## Planned repository structure
 
@@ -90,7 +91,7 @@ Each case study should cover:
 - [ ] Capture and sanitise current lab inventory.
 - [ ] Create a current-state network architecture diagram.
 - [ ] Document Windows Server / Active Directory and Windows 10.
-- [ ] Document Sysmon, Wazuh and validated detection rules.
+- [ ] Document Sysmon, Wazuh and validated detection rules (Wazuh manager service recorded; agent and detection evidence still pending).
 - [ ] Document Splunk ingestion, searches and dashboards.
 - [ ] Document controlled Kali / CALDERA simulations.
 - [ ] Publish evidence-based investigation case studies.
