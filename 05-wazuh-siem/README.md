@@ -132,15 +132,27 @@ The Windows 10 guest PowerShell screenshot verifies **`WazuhSvc` (DisplayName `W
 
 See the [Windows endpoint evidence](../04-windows-endpoint-security/README.md). Do not characterize Wazuh's live Windows telemetry as operational until agent registration/connection and event arrival are checked.
 
+## Windows 10 to Wazuh TCP connectivity — 7 November 2026
+
+A Windows PowerShell screenshot confirms `Test-NetConnection -ComputerName 10.10.10.20 -Port 1514` returned **`TcpTestSucceeded=True`** using interface `soc nw` and source address **`10.10.10.110`**.
+
+This is evidence of a reachable **TCP listener on Wazuh server port 1514**, not proof of authenticated Wazuh agent enrollment, current manager connection, Sysmon ingestion or a working alert rule. The prior manager-side result for agent `001` (`DonW10`) was `Disconnected` and must be refreshed.
+
+**Inventory difference:** The October 24 screenshot recorded Windows internal IPv4 `10.10.10.11`; this November 7 TCP test used `10.10.10.110`. The discrepancy is captured rather than silently overwriting the original VM inventory. Additional `Get-NetIPAddress` evidence would be needed to know whether the address was replaced or added.
+
+See the [Windows endpoint evidence and test output](../04-windows-endpoint-security/README.md).
+
 ## Next evidence collection
 
-From Windows 10, run the read-only test:
+Recheck registered Wazuh agent states on the Ubuntu manager:
 
-```powershell
-Test-NetConnection -ComputerName 10.10.10.20 -Port 1514
+```bash
+sudo /var/ossec/bin/agent_control -l
 ```
 
-Port 1514/TCP is a common Wazuh agent-event transport. `TcpTestSucceeded` only checks transport reachability; successful endpoint registration and log collection require separate proof. A negative result may reflect different agent transport settings. Do not change network settings during this documentation check.
+If agent `001` remains disconnected, document it as a **Wazuh session/agent issue despite successful TCP reachability**, and avoid claiming that endpoint events are flowing. Do not change agent or network settings during this documentation check.
+
+
 
 ## Security and evidence handling
 
