@@ -149,6 +149,24 @@ sudo grep -c '"id":"002"' /var/ossec/logs/alerts/alerts.json
 
 Count potential alerts for agent ID `002` in the current JSON alerts file; zero or nonzero cannot alone establish whether Sysmon is forwarded.
 
+## Step 5.14 — Wazuh alert-file evidence for agent 002 (7 November 2026)
+
+The owner reports that the Wazuh manager command
+
+```bash
+sudo grep -c '"id":"002"' /var/ossec/logs/alerts/alerts.json
+```
+
+returned **229 matching lines** in the *current* JSON alert file. This is useful evidence that alert-file records associated with the Windows VM's active Wazuh registration exist. It is a literal string-match count, **not** yet a structured verification that all lines represent unique alerts, or proof that they are recent Sysmon Event ID 1 records. Custom PowerShell detection rule `100101` remains alert-unverified.
+
+**Next source-specific, read-only check:**
+
+```bash
+sudo grep '"id":"002"' /var/ossec/logs/alerts/alerts.json | grep -ci 'Microsoft-Windows-Sysmon'
+```
+
+This counts lines that match both the agent-ID fragment and Sysmon provider name without showing raw event data. Zero does not necessarily imply no Sysmon ingestion if the provider name is represented differently or no matching events triggered alerts.
+
 ## Next portfolio milestones
 
 - [x] Confirm Sysmon Operational log exists and is enabled.
