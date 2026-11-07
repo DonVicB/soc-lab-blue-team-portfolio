@@ -115,6 +115,20 @@ Get-WinEvent -ListLog 'Microsoft-Windows-Sysmon/Operational' | Select-Object Log
 
 **Results (7 November screenshots):** The Windows 10 Sysmon Operational log is **enabled** with **33,076 records** across all event types. A follow-up read-only query confirmed **five recent Sysmon Event ID 1 process-creation records**, with local timestamps **14:58:42–14:59:37**, all from `Microsoft-Windows-Sysmon`. This confirms source events exist, **not** that the PowerShell rule's conditions matched, Wazuh received them, or rule `100101` fired. See [Windows endpoint security evidence](../04-windows-endpoint-security/README.md). Agent connectivity and alert correlation remain pending.
 
+## Later evidence — Sysmon process-creation telemetry confirmed (7 November 2026)
+
+After the earlier synthetic Logtest produced no rule `100101` match, the actual Windows VM was matched to Wazuh agent `002` (`DESKTOP-2MNIK0U`), and the manager reported that agent **Active**. The owner subsequently reported these results from the current `alerts.json` file:
+
+| Filter | Matching lines |
+| --- | ---: |
+| Agent `002` | 229 |
+| Agent `002` + `Microsoft-Windows-Sysmon` | 148 |
+| Agent `002` + Sysmon provider + `"eventID":"1"` | **60** |
+
+**Revised assessment:** Unlike the earlier manually pasted JSON simulation, the manager alert file now contains lines referencing **real Sysmon Event ID 1 process-creation data from the active Windows agent**. That is meaningful evidence of source-side logging and Wazuh alert-file receipt. These are grep line counts, not counts of unique parsed alerts. **No evidence yet shows that custom rule `100101` was the alerting rule for any of those 60 lines.** The earlier direct count of rule `100101` returned zero at that time; a structured rule-ID summary is the next step before any claim that the custom detection fired.
+
+See [Wazuh alert evidence](../05-wazuh-siem/README.md).
+
 Do not commit complete raw alert files or unredacted endpoint command lines.
 
 See [Wazuh SIEM deployment](../05-wazuh-siem/README.md) for manager and agent inventory.
