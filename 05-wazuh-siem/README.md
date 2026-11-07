@@ -208,15 +208,29 @@ Configuration and shared-file hashes shown in the console are intentionally **no
 
 **Status:** Manager-side connection and identity corroborated, **Sysmon event ingestion and custom PowerShell rule `100101` still not verified**. Do not state that a full detection pipeline has been demonstrated.
 
-## Next read-only verification — incoming alert records for agent 002
+## Next read-only verification — Sysmon provider evidence
 
-On the Ubuntu Wazuh manager:
+The current-file count for agent `002` returned `229`. Next, check how many of those matching lines mention `Microsoft-Windows-Sysmon` using the command in Step 5.14. A nonzero result would support that Sysmon-related alerts exist in the current file, not necessarily that custom PowerShell rule `100101` has fired.
+
+## Step 5.14 — Agent 002 alert-file count (7 November 2026)
+
+**Reported evidence:** The lab owner ran the read-only count:
 
 ```bash
 sudo grep -c '"id":"002"' /var/ossec/logs/alerts/alerts.json
 ```
 
-The result is the number of lines with this literal agent-ID fragment in the **current JSON alert file**. A positive count would support that alerts associated with `002` exist (not necessarily Sysmon alerts or real-time ingestion), while `0` could also be explained by retention, rule thresholds, a different JSON formatting style, or logs residing elsewhere. Do not post raw alerts without redaction.
+**Result reported:** `229` matching lines in the current `alerts.json` file.
+
+**Interpretation:** This is positive evidence that the current alert file contains lines matching the agent ID `002` pattern, consistent with Wazuh having generated alert records associated with the active Windows 10 agent `DESKTOP-2MNIK0U`. This is a **literal grep line count**, not yet a parsed count of unique alerts, nor proof that all matches represent live or recent Sysmon events. The count does not identify alert types or custom rule `100101`.
+
+**Next read-only source check:** On the Wazuh server, count only the agent-`002` matching lines containing the Sysmon provider name:
+
+```bash
+sudo grep '"id":"002"' /var/ossec/logs/alerts/alerts.json | grep -ci 'Microsoft-Windows-Sysmon'
+```
+
+This returns an integer and does not print raw event content. A positive result would identify current-file records mentioning Sysmon, whereas `0` is inconclusive without checking actual JSON structure and Wazuh's configured event filters.
 
 ## Security and evidence handling
 
