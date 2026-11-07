@@ -41,7 +41,8 @@ sudo systemctl is-active wazuh-manager
 - [x] Capture the installed Wazuh manager version and revision — `v4.14.9`, `rc2`, `server` (7 November screenshot).
 - [x] Enumerate registered agents and their current status using the manager CLI (7 November 2026; two endpoints disconnected).
 - [ ] Document Windows 10 agent connectivity and endpoint log collection (current agent status: disconnected; do not claim live collection).
-- [ ] Document the Sysmon event source and one redacted example detection.
+- [x] Document Windows 10 local Sysmon Operational channel enabled with 33,076 records (7 November screenshot); [endpoint verification](../04-windows-endpoint-security/README.md).
+- [ ] Record recent Sysmon Event ID 1 metadata and then correlate a redacted sample with Wazuh.
 - [x] Document screenshot-verified identity and intended conditions of [custom PowerShell detection rule `100101`](../09-detection-rules/wazuh-powershell-t1059-001.md) (7 November 2026).
 - [ ] Validate rule loading, capture the complete regex and correlate a representative Sysmon event with an actual Wazuh alert.
 - [ ] Document a repeatable alert investigation with timestamps and redacted supporting evidence.
@@ -113,16 +114,22 @@ Because the rule depends on `<if_group>sysmon_event1</if_group>`, this manually 
 
 See [detection rule test analysis](../09-detection-rules/wazuh-powershell-t1059-001.md) for the screenshot observations and limitations.
 
+## Windows 10 local Sysmon confirmation — 7 November 2026
+
+An Administrator PowerShell screenshot from `W.10.Pro_Soc-Lab Client` shows that `Get-WinEvent -ListLog 'Microsoft-Windows-Sysmon/Operational' | Select-Object LogName, RecordCount, IsEnabled` returned **`IsEnabled=True`** with **`RecordCount=33076`**. This verifies a populated local Sysmon event channel, **not** Wazuh ingestion, a specific Event ID 1 event or a fired PowerShell detection. Agent ID `001` was disconnected at the last Wazuh manager check.
+
+See the [Windows endpoint security evidence](../04-windows-endpoint-security/README.md).
+
 ## Next evidence collection
 
-On the Windows 10 lab endpoint, run a read-only check of the Sysmon event log:
+On the Windows 10 lab endpoint, list only non-sensitive metadata for the five most recent Sysmon process-creation (Event ID 1) records:
 
 ```powershell
-Get-WinEvent -ListLog 'Microsoft-Windows-Sysmon/Operational' | Select-Object LogName, RecordCount, IsEnabled
+Get-WinEvent -FilterHashtable @{LogName='Microsoft-Windows-Sysmon/Operational'; Id=1} -MaxEvents 5 |
+  Select-Object TimeCreated, Id, ProviderName
 ```
 
-This will establish whether the source log is enabled and contains records. It does not by itself prove Wazuh has ingested those events.
-
+Review any event content for sensitive command lines before sharing or committing it.
 
 ## Security and evidence handling
 
