@@ -129,6 +129,14 @@ After the earlier synthetic Logtest produced no rule `100101` match, the actual 
 
 See [Wazuh alert evidence](../05-wazuh-siem/README.md).
 
+## Step 5.17 — Actual rule IDs present in Sysmon process-creation alerts
+
+A screenshot on **7 November 2026** shows the manager running a read-only Python parser over `alerts.json` and counting `rule.id` on alerts filtered to agent `002`, Sysmon provider, and Event ID `1`. It found **60 parsed records** under six IDs: `92052` (25), `92032` (14), `92021` (8), `92066` (8), `92031` (4), and `92055` (1).
+
+**Custom rule `100101` appeared in none of these 60 parsed alerts.** This is a **negative finding limited to this specific current-file subset**, not proof of a global absence or a broken rule. Earlier Logtest input was decoded as ordinary JSON without showing a matching parent `sysmon_event1` group, so it did not constitute a conclusive live rule evaluation. Revisit rule `100101` during a dedicated controlled detection engineering case study, rather than claiming it matched.
+
+See the [Wazuh alert breakdown](../05-wazuh-siem/README.md).
+
 Do not commit complete raw alert files or unredacted endpoint command lines.
 
 See [Wazuh SIEM deployment](../05-wazuh-siem/README.md) for manager and agent inventory.
