@@ -195,19 +195,41 @@ The screenshot returns **2 matched events**, in one Statistics row:
 
 **Time-range nuance:** The query was run **Year to date**, not the requested All time. No conclusion is drawn about data outside that selected range.
 
-## Step 6.9 — Next read-only event metadata inspection
+## Step 6.9 — Two quarantine keyword hits explained as Brave process creation (8 November 2026)
 
-Stay in Splunk Search & Reporting. Set the time picker to **All time** and run:
+**Evidence:** Splunk Search & Reporting screenshot displaying the expanded events from:
 
 ```spl
-index=main sourcetype="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational" (quarantine OR quarantined)
-| eval event_id=coalesce(EventCode, EventID, 'Event.System.EventID', "not_extracted")
-| eval process_image=coalesce(Image, 'EventData.Image', "not_extracted")
-| table _time host event_id process_image ParentImage
-| sort 0 _time
+index=main (quarantine OR quarantined) sourcetype="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational"
 ```
 
-This lists the matching records' timestamps, event IDs and process-image metadata, without deliberately printing full command lines or raw event payloads. Process paths may still contain identifying directory names; redact such paths before publishing evidence. If the fields are missing, inspect the field extraction schema safely rather than presuming the records are process-creation or Defender events.
+The Splunk time picker remains **Year to date**. The `Events` tab shows **two** Sysmon XML events with the following screenshot-supported metadata:
+
+| Splunk display time | Sysmon Event ID | Executable image | Matched text |
+| --- | --- | --- | --- |
+| **2026-10-18 21:24:05.213** | `1` — Process Create | `brave.exe` (Brave Browser) | `--utility-sub-type=quarantine.mojom.Quarantine` |
+| **2026-11-05 22:32:19.528** | `1` — Process Create | `brave.exe` (Brave Browser) | `--utility-sub-type=quarantine.mojom.Quarantine` |
+
+The XML identifies the **Microsoft-Windows-Sysmon** provider; the `Image`, `OriginalFileName` and `ParentImage` fields indicate Brave. The command line's `quarantine.mojom.Quarantine` component is a Chromium-family browser file-download/quarantine service name; see Chromium's [quarantine service interface](https://chromium.googlesource.com/chromium/src/+/HEAD/components/services/quarantine/public/mojom/quarantine.mojom). The screenshot shows **process execution**, not an antimalware detection or the result of quarantining a specific file.
+
+**Analyst assessment:** These are **benign-looking browser utility process events** that matched a broad quarantine keyword search. Neither event establishes that Microsoft Defender detected, blocked or quarantined the earlier CALDERA Sandcat test agent. Classify them as an **investigative false lead**, not as two actual quarantine actions or a validated Defender false positive. No evidence yet ties either event to Sandcat.
+
+**Evidence hygiene:** The browser screenshot contains host/account paths, browser tabs, process command lines and hashes. Do not commit that unredacted image. Only minimal sanitized metadata and the conclusion above are retained here.
+
+## Step 6.10 — Next verification: actual Microsoft Defender detections
+
+The correct next evidence source is the Windows 10 guest's native **Microsoft-Windows-Windows Defender/Operational** channel, rather than more keyword searches against Brave command lines.
+
+Run this read-only PowerShell query inside the **Windows 10 SOC lab VM**:
+
+```powershell
+Get-WinEvent -FilterHashtable @{LogName='Microsoft-Windows-Windows Defender/Operational'; Id=1116,1117,1118,1119} -MaxEvents 30 |
+  Select-Object TimeCreated, Id, ProviderName
+```
+
+According to [Microsoft's event reference](https://learn.microsoft.com/en-us/defender-endpoint/troubleshoot-microsoft-defender-antivirus), Event ID `1116` denotes a malware/PUA detection, `1117` an action taken, and `1118`/`1119` unsuccessful action attempts. The command shows only timestamps, event IDs and providers—not threat messages, file paths or account details. A `1117` record must still be inspected (safely) to confirm the **specific action was quarantine** rather than clean/remove/allow.
+
+**Caveat:** If no events match or the log is inaccessible, PowerShell may return an error. That would require checking the channel's availability/retention rather than concluding that Defender never detected Sandcat. Event evidence must be correlated to the controlled CALDERA exercise before closing the case study.
 
 ## Future case study format
 
