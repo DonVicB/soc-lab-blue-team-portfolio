@@ -246,7 +246,7 @@ sudo grep '"id":"002"' /var/ossec/logs/alerts/alerts.json | grep -ci 'Microsoft-
 
 ## Next read-only verification — Rule IDs for Sysmon process creation
 
-The Step 5.16 result is now **60 matching alert-file lines** with agent `002`, Sysmon provider and Event ID `1`. The next validation is to parse JSON alert records and count their `rule.id` values. The special-purpose PowerShell rule `100101` still has not been observed firing.
+The Step 5.16 result is now **60 matching alert-file lines** with agent `002`, Sysmon provider and Event ID `1`. A JSON parse has now identified six Wazuh rule IDs in the 60 alerts (Step 5.17). The special-purpose PowerShell rule `100101` still has not been observed firing.
 
 ## Step 5.16 — Sysmon Event ID 1 found in Wazuh alerts (7 November 2026)
 
@@ -268,7 +268,25 @@ The search counts lines in the **current Wazuh JSON alert file** that simultaneo
 
 **Assessment:** Combined with the Windows VM's enabled and populated Sysmon Operational channel, local Event ID 1 records, active WazuhSvc service, manager-side `agent_control -i 002` status **Active**, and successful TCP 1514 probe, this gives substantial evidence for the **Windows Sysmon → Wazuh agent → manager alert file** pipeline. It does **not** yet demonstrate that custom PowerShell rule `100101` fired, that all 60 lines represent unique alerts, or that the records are current to the exact time of the check. This is not an alert-efficacy assessment.
 
-**Next evidence:** Parse the current JSON alert file and summarize **Wazuh rule IDs applied to Sysmon Event ID 1 records from agent `002`**, rather than exposing raw endpoint command lines.
+**Step 5.17 completed:** A Python JSON parse verified 60 Sysmon Event ID 1 alerts and identified six Wazuh rule IDs. The custom rule `100101` was not among them; see Step 5.17 for the breakdown.
+
+## Step 5.17 — Parsed Wazuh rules for Sysmon Event ID 1 (7 November 2026)
+
+**Evidence:** Screenshot of a read-only Python script parsing `/var/ossec/logs/alerts/alerts.json` with `json.loads`, filtering for `agent.id == '002'`, `data.win.system.providerName` containing `Sysmon`, and `data.win.system.eventID == '1'`. It then counted the resulting `rule.id` values using `collections.Counter`. The script printed **60 parsed JSON alerts**, independently corroborating the preceding 60-line `grep` result.
+
+| Wazuh rule ID | Parsed alert count |
+| --- | ---: |
+| `92052` | **25** |
+| `92032` | **14** |
+| `92021` | **8** |
+| `92066` | **8** |
+| `92031` | **4** |
+| `92055` | **1** |
+| **Total** | **60** |
+
+**Assessment:** These six rule IDs are the actual values returned by the manager's parsed **Sysmon process-creation alert records from agent `002`**. Their rule descriptions and clinical/security significance were **not** included in the output and must not be invented. The custom local PowerShell rule `100101` is **absent from this 60-alert subset**, which is not proof it has never fired or can never match other events.
+
+**Portfolio milestone:** The lab has now demonstrated an evidence-backed **Sysmon source → connected Wazuh agent → manager alerts → rule identification** workflow. It does not yet demonstrate a complete triage investigation, a successful custom-rule hit, or the correctness of each rule's classification. Next, switch to documenting the existing Splunk setup and a real investigation case study instead of expanding infrastructure inventory indefinitely.
 
 ## Security and evidence handling
 
