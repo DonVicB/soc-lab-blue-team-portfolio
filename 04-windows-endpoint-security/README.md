@@ -123,6 +123,32 @@ Do not show a Windows agent `client.keys` file or commit registration secrets. N
 
 
 
+## Step 5.13 — Manager-side Windows agent identity corroborated (7 November 2026, around 21:03 AEDT)
+
+A screenshot from the Ubuntu Wazuh manager running `sudo /var/ossec/bin/agent_control -i 002` lists:
+
+| Item | Screenshot evidence |
+| --- | --- |
+| Agent ID | `002` |
+| Agent name | `DESKTOP-2MNIK0U` (exactly matches Windows `hostname`) |
+| Status | **Active** |
+| OS | **Microsoft Windows 10 Pro** |
+| Client version | **Wazuh v4.14.9** |
+| Registration IP | `any` |
+| Syscheck status | Start and completion times present in manager output |
+
+This strengthens the identification of the current Windows 10 lab VM as the active Wazuh agent `002`. The `DonW10` registration `001` remains a separate disconnected entry; the screenshot does not explain whether it is stale or belongs to another endpoint. The configuration hashes visible in the terminal screenshot were deliberately not reproduced in the GitHub documentation.
+
+**Verification boundary:** Agent identity and Active registration are now supported by the screenshots, but **receipt of Sysmon Event ID 1 or firing of custom rule `100101` remains unverified**. An agent can show Active without proving that this particular Windows log source has been configured for collection.
+
+**Next read-only command (Ubuntu manager):**
+
+```bash
+sudo grep -c '"id":"002"' /var/ossec/logs/alerts/alerts.json
+```
+
+Count potential alerts for agent ID `002` in the current JSON alerts file; zero or nonzero cannot alone establish whether Sysmon is forwarded.
+
 ## Next portfolio milestones
 
 - [x] Confirm Sysmon Operational log exists and is enabled.
@@ -130,7 +156,8 @@ Do not show a Windows agent `client.keys` file or commit registration secrets. N
 - [x] Confirm five recent Sysmon Event ID 1 process-creation records (7 November 2026; screenshot-verified).
 - [x] Confirm local Windows Wazuh agent service `WazuhSvc` is running and Automatic (7 November screenshot).
 - [x] Match Windows guest hostname `DESKTOP-2MNIK0U` to the manager's Active agent `002` by name (7 November screenshot).
-- [ ] Verify agent registration details and real Sysmon event ingestion (name match alone is not sufficient).
+- [x] Corroborate Windows VM identity and active Wazuh registration `002` using manager-side OS and version details (7 November 2026 screenshot).
+- [ ] Verify actual Sysmon event ingestion for agent `002` (manager Active alone does not establish it).
 - [ ] Correlate a controlled, redacted Sysmon process event with Wazuh rule `100101` or document why it does not fire.
 
 See [Wazuh SIEM](../05-wazuh-siem/README.md) and [PowerShell detection rule analysis](../09-detection-rules/wazuh-powershell-t1059-001.md).
