@@ -44,6 +44,7 @@ The inventory and configurations will be checked against the current virtual mac
 
 - [VMware SOC lab architecture](01-lab-architecture/README.md) — all eight guest internal IPv4 addresses documented from live evidence; some routing/DNS and Metasploitable3 isolation remain to verify.
 - [Wazuh SIEM deployment and verification](05-wazuh-siem/README.md) — screenshot confirms active manager on 7 November 2026; two registered Windows agents disconnected, detection evidence pending.
+- [Detection engineering index](09-detection-rules/README.md) — PowerShell rule `100101`, MITRE T1059.001, configuration verified; alert validation pending.
 
 ## Planned repository structure
 
