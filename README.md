@@ -18,7 +18,7 @@ The goal is to make each exercise repeatable and explain **what happened, how it
 | Windows Server 2019 / Active Directory Domain Services | Identity management, domain controller, DNS, users and groups | To document |
 | Windows 10 endpoint | Domain-joined workstation and security telemetry | To document |
 | Sysmon (System Monitor) | Detailed Windows endpoint events | To document |
-| Wazuh | Security information and event management (SIEM), alerts and rules | [Deployment documentation started](05-wazuh-siem/README.md): manager active (owner-reported), agents pending |
+| Wazuh | Security information and event management (SIEM), alerts and rules | [Deployment documentation in progress](05-wazuh-siem/README.md): manager active, 2 registered endpoints disconnected (7 Nov screenshot) |
 | Splunk | Security log searches and investigations | Setup / validation to document |
 | Kali Linux | Authorised attack simulation | To document |
 | MITRE CALDERA | Adversary emulation | Setup / validation to document |
@@ -43,7 +43,7 @@ The inventory and configurations will be checked against the current virtual mac
 ## Lab architecture documentation
 
 - [VMware SOC lab architecture](01-lab-architecture/README.md) — all eight guest internal IPv4 addresses documented from live evidence; some routing/DNS and Metasploitable3 isolation remain to verify.
-- [Wazuh SIEM deployment and verification](05-wazuh-siem/README.md) — manager service reported active on 7 November 2026; agent and detection evidence collection in progress.
+- [Wazuh SIEM deployment and verification](05-wazuh-siem/README.md) — screenshot confirms active manager on 7 November 2026; two registered Windows agents disconnected, detection evidence pending.
 
 ## Planned repository structure
 
