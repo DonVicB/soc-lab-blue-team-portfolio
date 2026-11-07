@@ -105,15 +105,25 @@ returned **`0`**. This means no lines in the current JSON alert file matched the
 
 See [rule `100101` evidence and validation](../09-detection-rules/wazuh-powershell-t1059-001.md) for limitations.
 
+## Synthetic Sysmon JSON Logtest — 7 November 2026
+
+The owner supplied a screenshot of `wazuh-logtest v4.14.9` after entering a synthetic Windows Sysmon process-creation JSON event with `powershell.exe -enc TEST`. **Phase 1** completed pre-decoding; **Phase 2** decoded the event as `json` and extracted the PowerShell image, command line and event metadata. **No Phase 3 matching output was shown**, and custom rule `100101` did **not** trigger in this test.
+
+Because the rule depends on `<if_group>sysmon_event1</if_group>`, this manually submitted JSON sample may not have reached the normal Windows EventChannel parent rule group. This is a **test-format/parent-rule limitation**, not proof that the deployed rule is defective. The manager's two Windows endpoint agents were last seen disconnected.
+
+See [detection rule test analysis](../09-detection-rules/wazuh-powershell-t1059-001.md) for the screenshot observations and limitations.
+
 ## Next evidence collection
 
-Run Wazuh's interactive rule test to see whether the local rule is loaded and can match a sanitized sample:
+On the Windows 10 lab endpoint, run a read-only check of the Sysmon event log:
 
-```bash
-sudo /var/ossec/bin/wazuh-logtest
+```powershell
+Get-WinEvent -ListLog 'Microsoft-Windows-Sysmon/Operational' | Select-Object LogName, RecordCount, IsEnabled
 ```
 
-This does not modify the deployed rule. A successful simulated match still needs to be distinguished from live endpoint event ingestion.
+This will establish whether the source log is enabled and contains records. It does not by itself prove Wazuh has ingested those events.
+
+
 ## Security and evidence handling
 
 Do not commit authentication credentials, agent registration keys, certificates/private keys, raw endpoint logs containing personal information or full configuration exports. Lab IPs are included here for private inventory; review them before publishing the repository publicly.
