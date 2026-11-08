@@ -19,7 +19,7 @@ The goal is to make each exercise repeatable and explain **what happened, how it
 | Windows 10 endpoint | Workstation and security telemetry | [Windows endpoint evidence](04-windows-endpoint-security/README.md): Sysmon process creation and active Wazuh agent verified |
 | Sysmon (System Monitor) | Detailed Windows endpoint events | [Source and Wazuh process-creation alert evidence](04-windows-endpoint-security/README.md): 60 parsed Sysmon Event ID 1 manager alerts |
 | Wazuh | Security information and event management (SIEM), alerts and rules | [Manager and detection evidence](05-wazuh-siem/README.md): active agent `002`, 60 parsed Sysmon Event ID 1 alerts across six rules; custom rule `100101` unverified |
-| Splunk | Security log searches and investigations | [Windows/Sysmon hunting and Defender threat pivot](06-splunk-siem/README.md): native Defender confirms `Trojan:Win64/SandCat.RTS!MTB`, two detections and two recorded quarantine actions; SIEM correlation and outcome pending |
+| Splunk | Security log searches and investigations | [Windows/Sysmon hunting and Defender threat pivot](06-splunk-siem/README.md): native Defender confirms two SandCat detections and two successfully completed quarantine actions (`0x00000000`); SIEM correlation pending |
 | Kali Linux | Authorised attack simulation | To document |
 | MITRE CALDERA | Adversary emulation | Setup / validation to document |
 | Wireshark | Network traffic analysis | To document |
@@ -37,8 +37,8 @@ The inventory and configurations will be checked against the current virtual mac
 ### Microsoft Defender / Sandcat investigation
 
 - **Focus:** Investigate Microsoft Defender's response to a SandCat-labelled threat during the authorised CALDERA/Sandcat lab exercise.
-- **Verified endpoint evidence:** On 19 October 2026 Defender logged two `1116` detections of `Trojan:Win64/SandCat.RTS!MTB` and two `1117` actions explicitly named **Quarantine**.
-- **Remaining evidence:** Quarantine outcome/error status, binary/process correlation to the controlled CALDERA operation, and dedicated Defender event ingestion in Splunk.
+- **Verified endpoint evidence:** On 19 October 2026 Defender logged two `1116` detections of `Trojan:Win64/SandCat.RTS!MTB` and two `1117` quarantine actions with error code **`0x00000000`** and description **The operation completed successfully**.
+- **Remaining evidence:** Binary/process correlation to the controlled CALDERA operation, exact quarantined artifacts, and dedicated Defender event ingestion in Splunk.
 - **Case study:** [Defender SandCat threat and quarantine investigation](10-incident-investigations/defender-sandcat-case-study.md) — active, evidence-based report; no remediation-success claim yet.
 
 ## Lab architecture documentation
@@ -47,7 +47,7 @@ The inventory and configurations will be checked against the current virtual mac
 - [Wazuh SIEM deployment and verification](05-wazuh-siem/README.md) — active Windows agent `002`, 60 parsed Sysmon Event ID 1 alert records; custom PowerShell rule `100101` not yet validated.
 - [Detection engineering index](09-detection-rules/README.md) — PowerShell rule `100101`, MITRE T1059.001, configuration verified; alert validation pending.
 - [Windows 10 endpoint security](04-windows-endpoint-security/README.md) — local Sysmon Event ID 1 and manager alert evidence verified.
-- [Splunk SIEM search and investigation plan](06-splunk-siem/README.md) — keyword-search false lead resolved; native Defender SandCat detections and quarantine actions verified, outcome validation next.
+- [Splunk SIEM search and investigation plan](06-splunk-siem/README.md) — browser keyword false lead resolved; native Defender SandCat quarantine success verified, Sysmon time correlation next.
 - [Defender SandCat investigation case study](10-incident-investigations/defender-sandcat-case-study.md) — timeline, detection metadata, evidence limits and follow-up actions.
 
 ## Planned repository structure
