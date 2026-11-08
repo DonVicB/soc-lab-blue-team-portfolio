@@ -1,6 +1,6 @@
 # Case study — Defender detects SandCat-labelled Trojan during SOC lab exercise
 
-**Status:** Investigation in progress — **detection and named quarantine actions verified in native endpoint event records**, action outcome and complete CALDERA-to-Defender correlation still pending.
+**Status:** Investigation in progress — **SandCat threat detections, quarantine actions, and successful completion status verified in native Microsoft Defender event records**. CALDERA-to-Defender process/artifact correlation and SIEM coverage still pending.
 
 ## Analyst question
 
@@ -34,7 +34,7 @@ was followed by targeted parsing of the `Threat Name`, `Severity Name`, `Categor
 
 **Observed:** Two `1116` detections and two `1117` actions explicitly named **Quarantine** for `Trojan:Win64/SandCat.RTS!MTB`. The classification and action fields come from **native Microsoft Defender endpoint records**, **not from Splunk**.
 
-**Evidence limits:** The screenshot did not show error codes, action status, affected paths, or file hashes. Thus, the specific quarantine action is **recorded**, but successful completion and exact artifact identity remain to be verified. The threat label aligns with the earlier owner's CALDERA Sandcat test, but no direct correlation of binary hash, process tree, CALDERA operation time, or affected file has yet been shown. Do not claim that Sandcat executed successfully or that Defender definitely completed remediation.
+**Evidence limits (updated at Step 6.12):** A later screenshot provides error codes and descriptions for both quarantine actions, confirming that Defender **reported successful completion** of each action. Affected paths, file hashes, process ancestry, exact CALDERA operation timestamps, and the agent's runtime behavior remain unverified. Do not infer that Sandcat successfully executed or that all potentially associated artifacts were remediated.
 
 ## Earlier Splunk hunting — what did and did not work
 
@@ -46,18 +46,37 @@ was followed by targeted parsing of the `Threat Name`, `Severity Name`, `Categor
 
 **Practical SOC lesson:** A keyword match is a lead, not proof. Confirm the event provider, event ID, threat name and action metadata before attributing security outcomes.
 
-## Next read-only validation
+## Step 6.12 — Defender quarantine completion confirmed (8 November 2026)
 
-Inspect only selected action-result XML fields on the Windows 10 VM for the two `1117` entries (see [Step 6.12 in Splunk documentation](../06-splunk-siem/README.md)). Then determine whether the Defender Operational channel or another reliable threat/event source is searchable in Splunk, and correlate evidence with the documented CALDERA exercise.
+**Evidence:** Administrator PowerShell screenshot from `DESKTOP-2MNIK0U` after querying Defender Operational `1117` events in the 19 October 2026 00:00–01:00 local window and extracting `Threat Name`, `Action Name`, `Error Code`, and `Error Description`. Both records report:
+
+| Event time (guest local) | Event ID | Threat | Action name | Error code | Error description |
+| --- | --- | --- | --- | --- | --- |
+| 2026-10-19 00:21:22 | `1117` | `Trojan:Win64/SandCat.RTS!MTB` | **Quarantine** | `0x00000000` | **The operation completed successfully.** |
+| 2026-10-19 00:25:23 | `1117` | `Trojan:Win64/SandCat.RTS!MTB` | **Quarantine** | `0x00000000` | **The operation completed successfully.** |
+
+**Analyst conclusion:** Microsoft's Defender Operational events demonstrate two detections, two quarantine actions and **successful completion reported for both actions**. This is stronger than merely observing event ID `1117`, but does not yet prove the Sandcat agent ran, identify the precise quarantined file(s), or show any other containment steps.
+
+## Next read-only validation — Splunk/Sysmon time correlation
+
+In Splunk Search & Reporting, select **All time**, then query the historical hour spanning the Defender actions to check that Sysmon data exists in the corresponding time window:
+
+```spl
+index=main sourcetype="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational" earliest="10/18/2026:23:45:00" latest="10/19/2026:00:45:00"
+| stats count min(_time) as first_seen max(_time) as last_seen by host
+| convert ctime(first_seen) ctime(last_seen)
+```
+
+This is a **coverage check**, not a direct CALDERA attribution. Compare the result with Defender event times only after checking Splunk time-zone alignment. If no events exist, inspect collection history before treating it as proof of no process activity.
 
 ## Open evidence and response questions
 
 - [x] Confirm Windows Defender detected a threat labelled `Trojan:Win64/SandCat.RTS!MTB`.
 - [x] Confirm Defender recorded two action events labelled **Quarantine**.
-- [ ] Check action outcome/error codes and whether remediation completed.
+- [x] Confirm both Defender quarantine action events report `0x00000000` and **The operation completed successfully**.
 - [ ] Relate the detection timestamps to CALDERA operation details and controlled process execution.
 - [ ] Establish which relevant data is present or absent in Splunk and Wazuh.
 - [ ] Produce a final event timeline, analysis and defensible outcome/response recommendations.
 - [ ] Create redacted evidence exhibits; do **not** commit raw endpoint screenshots that expose account names, paths, hashes or unrelated personal browser data.
 
-**Current case disposition:** Detection plus recorded quarantine actions **substantiated**. Final remediation outcome, source attribution and SIEM-level correlation **not yet established**.
+**Current case disposition:** Two SandCat-labelled threat detections and two **successfully completed quarantine actions reported by Defender**. Exact quarantined artifact(s), CALDERA process execution, and SIEM-level correlation **not yet established**.
