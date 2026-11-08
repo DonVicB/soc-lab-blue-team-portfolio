@@ -260,20 +260,30 @@ A proper SOC analyst must not conflate these events with the Brave browser `quar
 
 **Case-study draft:** [Microsoft Defender SandCat investigation](../10-incident-investigations/defender-sandcat-case-study.md) — facts, false leads, limitations and remaining checks.
 
-## Step 6.12 — Next read-only validation: quarantine outcome
+## Step 6.12 — Successful Defender quarantine actions verified (8 November 2026)
 
-On the Windows 10 VM, use Administrator PowerShell to extract only targeted XML fields from the two `1117` action records:
+**Evidence:** Screenshot of a read-only XML-field extraction against the Windows 10 VM's native Defender Operational log, filtering action event ID `1117` between `2026-10-19 00:00:00` and `01:00:00`. Both matched action events provide:
 
-```powershell
-Get-WinEvent -FilterHashtable @{LogName='Microsoft-Windows-Windows Defender/Operational'; Id=1117; StartTime=[datetime]'2026-10-19 00:00:00'; EndTime=[datetime]'2026-10-19 01:00:00'} |
-ForEach-Object {
-  $e = $_; $xml = [xml]$e.ToXml()
-  $fields = $xml.Event.EventData.Data | Where-Object { $_.Name -match 'Threat Name|Action Name|Error Code|Error Description|Action Status' }
-  [pscustomobject]@{ Time = $e.TimeCreated; EventID = $e.Id; Details = (($fields | ForEach-Object { "$($_.Name)=$($_.'#text')" }) -join '; ') }
-} | Format-List
+| Windows guest local time | Threat name | Action name | Error code | Error description |
+| --- | --- | --- | --- | --- |
+| **2026-10-19 00:21:22** | `Trojan:Win64/SandCat.RTS!MTB` | **Quarantine** | **`0x00000000`** | **The operation completed successfully.** |
+| **2026-10-19 00:25:23** | `Trojan:Win64/SandCat.RTS!MTB` | **Quarantine** | **`0x00000000`** | **The operation completed successfully.** |
+
+**Assessment:** The endpoint's native Microsoft Defender Operational records report **two successful quarantine operations** for a threat labelled `Trojan:Win64/SandCat.RTS!MTB`. This supports a Defender detection → protection action → reported success sequence, not yet a proof of the exact quarantined file or any other process behavior. Defender events have **not** yet been shown to be indexed in Splunk; do not mislabel this as SIEM-native detection. The preceding Brave browser `quarantine.mojom.Quarantine` keyword hits remain unrelated false leads.
+
+**Case-study evidence:** [Defender SandCat investigation](../10-incident-investigations/defender-sandcat-case-study.md).
+
+## Step 6.13 — Next: correlate Sysmon collection window in Splunk
+
+Select **All time** in Splunk Search & Reporting, then run the following **read-only, aggregate** SPL to check for Sysmon data around the two historical detections:
+
+```spl
+index=main sourcetype="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational" earliest="10/18/2026:23:45:00" latest="10/19/2026:00:45:00"
+| stats count min(_time) as first_seen max(_time) as last_seen by host
+| convert ctime(first_seen) ctime(last_seen)
 ```
 
-This command is **read-only** and does not deliberately print raw messages, full paths or command lines. If no status or error fields are available, that absence should be documented rather than declaring success. Do not commit raw/unredacted screenshots.
+This is a **time-window coverage check**, not proof of a Sandcat process or Defender forwarding. Confirm the Splunk display time zone aligns with Windows guest local timestamps before attributing events; an empty result does not establish that nothing happened on the endpoint.
 
 ## Future case study format
 
