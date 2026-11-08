@@ -39,7 +39,7 @@ The inventory and configurations will be checked against the current virtual mac
 - **Focus:** Investigate Microsoft Defender's response to a SandCat-labelled threat during the authorised CALDERA/Sandcat lab exercise.
 - **Verified endpoint evidence:** On 19 October 2026 Defender logged two `1116` detections of `Trojan:Win64/SandCat.RTS!MTB` and two `1117` quarantine actions with error code **`0x00000000`** and description **The operation completed successfully**.
 - **Remaining evidence:** Binary/process correlation to the controlled CALDERA operation, exact quarantined artifacts, and dedicated Defender event ingestion in Splunk.
-- **Case study:** [Defender SandCat threat and quarantine investigation](10-incident-investigations/defender-sandcat-case-study.md) — active, evidence-based report; no remediation-success claim yet.
+- **Case study:** [Defender SandCat threat and quarantine investigation](10-incident-investigations/defender-sandcat-case-study.md) — investigation in progress; Defender-reported quarantine success verified, process execution and wider remediation still unverified.
 
 ## Lab architecture documentation
 
@@ -82,7 +82,7 @@ Each case study should cover:
 
 ## Security and privacy
 
-- This is an **isolated, authorised training lab**.
+- All exercises are limited to an **authorised training lab**. Verify network isolation before each simulation; outstanding topology checks are documented in the architecture notes.
 - Do not commit credentials, tokens, certificates, private keys, password vaults, or unredacted configuration exports.
 - Redact personal data, device identifiers and any network details that should remain private.
 - Keep VMware disks, snapshots, packet captures containing sensitive traffic, and other large artefacts outside Git.
